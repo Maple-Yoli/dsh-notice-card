@@ -26,9 +26,28 @@
 
 ## 安装
 
-插件是纯 Host 插件（`dsh.bundle.patch`），有三种装法，按你的 DSH 形态选一种。
+插件是纯 Host 插件（`dsh.bundle.patch`），有四种装法，按你的 DSH 形态选一种。
 
-### 方式一：手动挂载（所有形态都能用，推荐先用这个验证）
+### 方式一：从 npm 装（不用 clone，推荐）
+
+```bash
+npm i dsh-notice-card
+```
+
+在装它的目录里能拿到 `node_modules/dsh-notice-card/`，然后在你的 profile 的 `cordis.patch.yml` 末尾追加：
+
+```yaml
+- insert:
+    - id: notice-card
+      name: C:/path/to/node_modules/dsh-notice-card/lib/index.mjs
+      config: {}
+```
+
+把 `C:/path/to` 换成你执行 `npm i` 的目录，**路径用正斜杠**。
+
+> 包一旦发布到 registry 就是长期可装的，装的人不需要账号也不需要令牌。作者的发布令牌只在**推新版本**时用得上，跟别人安装无关。
+
+### 方式二：手动挂载（clone 源码，适合要改代码）
 
 ```bash
 git clone https://github.com/Maple-Yoli/dsh-notice-card.git
@@ -47,7 +66,7 @@ git clone https://github.com/Maple-Yoli/dsh-notice-card.git
 
 DSH 支持补丁热重载：新增的 `id` 会被立即加载，不用重启。如果没反应，完全退出 DSH 再开一次。
 
-### 方式二：官方桌面端（Electron 应用）
+### 方式三：官方桌面端（Electron 应用）
 
 官方桌面端的 `desktop` profile 由应用自己独占，命令行 `dsh plugin --profile desktop add` 会被拒绝。请走应用内的 **设置 → 插件**，用仓库地址安装：
 
@@ -57,12 +76,18 @@ Maple-Yoli/dsh-notice-card
 
 安装完成后插件作为 bundle 自动挂载，无需手工改 patch。
 
-### 方式三：`dsh web` / 自建 profile
+### 方式四：`dsh web` / 自建 profile
 
 这些 profile 允许命令行装插件：
 
 ```bash
 dsh plugin add github:Maple-Yoli/dsh-notice-card
+```
+
+也可以直接装 npm 上的版本：
+
+```bash
+dsh plugin add dsh-notice-card
 ```
 
 `reconcilePlugins` 会读到你包里的 `dsh.bundle.patch`，自动把它加进 profile 的 `dsh.profile.bundles`，补丁随之生效。
@@ -109,9 +134,9 @@ dsh plugin add github:Maple-Yoli/dsh-notice-card
 
 ## 卸载
 
-1. 把 `cordis.patch.yml` 里那段 `- insert:` 删掉（方式一/三），或在 设置 → 插件 里卸载（方式二）
+1. 把 `cordis.patch.yml` 里那段 `- insert:` 删掉（方式一/二/四），或在 设置 → 插件 里卸载（方式三）
 2. 删掉缓存：`%LOCALAPPDATA%\dsh-notice-card\`
-3. 方式一可以连带删掉克隆目录
+3. 方式一可以连带删掉 `node_modules/dsh-notice-card`，方式二可以连带删掉克隆目录
 
 ## 工作原理
 
@@ -168,4 +193,4 @@ A focus-free notice card for DeepSeek Harness on Windows. It slides into the bot
 
 Pure host plugin: `agent/turn-stopping`, `approval/request` and `user-questions/request` → a detached PowerShell process draws a borderless WinForms window with GDI+. No notification-center permission, no network, no telemetry. The approval/question listeners only observe and delegate with `next()` — the built-in UI still answers.
 
-Requires Windows, Node >= 20, and Windows PowerShell 5.1 (ships with Windows; PowerShell 7 is not needed). Clone the repo and add an insert to your profile's `cordis.patch.yml` pointing `name:` at the absolute path of `lib/index.mjs`; on the official Electron desktop app, install it from **Settings → Plugins** instead. See the Chinese section above for the full config table.
+Requires Windows, Node >= 20, and Windows PowerShell 5.1 (ships with Windows; PowerShell 7 is not needed). Install with `npm i dsh-notice-card` and add an insert to your profile's `cordis.patch.yml` pointing `name:` at the absolute path of `node_modules/dsh-notice-card/lib/index.mjs` (or clone the repo and point at `lib/index.mjs`); on the official Electron desktop app, install it from **Settings → Plugins** instead. See the Chinese section above for the full config table.
