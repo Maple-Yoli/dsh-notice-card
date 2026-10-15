@@ -1,4 +1,4 @@
 - insert:
-    - id: notify-card
-      name: dsh-notify-card
+    - id: notice-card
+      name: dsh-notice-card
       config: {}

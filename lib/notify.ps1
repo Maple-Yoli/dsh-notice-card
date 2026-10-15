@@ -44,7 +44,7 @@ Add-Type -AssemblyName System.Drawing
 # lives under %LOCALAPPDATA% rather than next to this script, because the script
 # is installed inside a node_modules tree that may be read-only. Delete the DLL
 # whenever the C# below changes, so it is rebuilt.
-$notifyDll = Join-Path (Join-Path $env:LOCALAPPDATA 'dsh-notify-card') 'NotifyWin.dll'
+$notifyDll = Join-Path (Join-Path $env:LOCALAPPDATA 'dsh-notice-card') 'NotifyWin.dll'
 $notifySrc = @'
 using System;
 using System.Runtime.InteropServices;
@@ -134,7 +134,7 @@ $null = [NotifyWin]::timeBeginPeriod(1)
 # only its top strip (title row and its two buttons) shows. A file whose owning
 # process is gone (a crash, or a killed card) is swept here too, so the stack
 # cannot grow phantom slots.
-$cardDir = Join-Path ([System.IO.Path]::GetTempPath()) 'dsh-notify-cards'
+$cardDir = Join-Path ([System.IO.Path]::GetTempPath()) 'dsh-notice-cards'
 $null = New-Item -ItemType Directory -Path $cardDir -Force
 $cardFile = Join-Path $cardDir ('{0:D19}-{1}.card' -f (Get-Date).Ticks, $PID)
 

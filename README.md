@@ -1,4 +1,4 @@
-# Notify Card
+# Notice Card
 
 给 DeepSeek Harness 的一张桌面通知卡：**一轮任务跑完**、**等你审批工具调用**、**等你回答问题**时，屏幕右下角滑出一张卡片，不抢焦点、不打断你正在做的事。
 
@@ -22,7 +22,7 @@
 | Node | `>= 20`（只给宿主加载插件用） |
 | 运行时 | Windows PowerShell 5.1（系统自带，无需额外安装；**不需要** PowerShell 7） |
 
-> 卡片的脚本用到了 WinForms 与 DPI 感知 API，走的是 5.1 自带的 .NET Framework。仓库不含任何预编译产物，第一次弹卡时插件会自动把一小段 C# 互操作代码编译成 DLL 缓存到 `%LOCALAPPDATA%\dsh-notify-card\NotifyWin.dll`。
+> 卡片的脚本用到了 WinForms 与 DPI 感知 API，走的是 5.1 自带的 .NET Framework。仓库不含任何预编译产物，第一次弹卡时插件会自动把一小段 C# 互操作代码编译成 DLL 缓存到 `%LOCALAPPDATA%\dsh-notice-card\NotifyWin.dll`。
 
 ## 安装
 
@@ -31,19 +31,19 @@
 ### 方式一：手动挂载（所有形态都能用，推荐先用这个验证）
 
 ```bash
-git clone https://github.com/Maple-Yoli/dsh-notify-card.git
+git clone https://github.com/Maple-Yoli/dsh-notice-card.git
 ```
 
 打开你的 profile 目录下的 `cordis.patch.yml`（默认在 `%USERPROFILE%\.dsh\profiles\<profile>\cordis.patch.yml`），在末尾追加：
 
 ```yaml
 - insert:
-    - id: notify-card
-      name: C:/path/to/dsh-notify-card/lib/index.mjs
+    - id: notice-card
+      name: C:/path/to/dsh-notice-card/lib/index.mjs
       config: {}
 ```
 
-把 `C:/path/to/dsh-notify-card` 换成你实际的克隆路径，**路径用正斜杠**。
+把 `C:/path/to/dsh-notice-card` 换成你实际的克隆路径，**路径用正斜杠**。
 
 DSH 支持补丁热重载：新增的 `id` 会被立即加载，不用重启。如果没反应，完全退出 DSH 再开一次。
 
@@ -52,7 +52,7 @@ DSH 支持补丁热重载：新增的 `id` 会被立即加载，不用重启。�
 官方桌面端的 `desktop` profile 由应用自己独占，命令行 `dsh plugin --profile desktop add` 会被拒绝。请走应用内的 **设置 → 插件**，用仓库地址安装：
 
 ```
-Maple-Yoli/dsh-notify-card
+Maple-Yoli/dsh-notice-card
 ```
 
 安装完成后插件作为 bundle 自动挂载，无需手工改 patch。
@@ -62,7 +62,7 @@ Maple-Yoli/dsh-notify-card
 这些 profile 允许命令行装插件：
 
 ```bash
-dsh plugin add github:Maple-Yoli/dsh-notify-card
+dsh plugin add github:Maple-Yoli/dsh-notice-card
 ```
 
 `reconcilePlugins` 会读到你包里的 `dsh.bundle.patch`，自动把它加进 profile 的 `dsh.profile.bundles`，补丁随之生效。
@@ -75,8 +75,8 @@ dsh plugin add github:Maple-Yoli/dsh-notify-card
 
 ```yaml
 - insert:
-    - id: notify-card
-      name: C:/path/to/dsh-notify-card/lib/index.mjs
+    - id: notice-card
+      name: C:/path/to/dsh-notice-card/lib/index.mjs
       config:
         onTurnEnd: false
         seconds: 20
@@ -110,7 +110,7 @@ dsh plugin add github:Maple-Yoli/dsh-notify-card
 ## 卸载
 
 1. 把 `cordis.patch.yml` 里那段 `- insert:` 删掉（方式一/三），或在 设置 → 插件 里卸载（方式二）
-2. 删掉缓存：`%LOCALAPPDATA%\dsh-notify-card\`
+2. 删掉缓存：`%LOCALAPPDATA%\dsh-notice-card\`
 3. 方式一可以连带删掉克隆目录
 
 ## 工作原理
@@ -154,7 +154,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File lib\notify.ps1 -Popup -Title
 - 不发任何网络请求，不写任何统计
 - 不收集你的路径、用户名、会话内容
 - 与 DSH 的唯一交互就是上面那三个事件，卡片上显示的只有事件自带的工具名/问题文本
-- 卡片的 C# 编译产物缓存在 `%LOCALAPPDATA%\dsh-notify-card\`，卸载时删掉即可
+- 卡片的 C# 编译产物缓存在 `%LOCALAPPDATA%\dsh-notice-card\`，卸载时删掉即可
 
 ## License
 
