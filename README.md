@@ -141,13 +141,20 @@ dsh plugin --profile web add github:Maple-Yoli/dsh-notice-card
 ## 工作原理
 
 ```
-一轮结束        → agent/turn-stopping            ┐
-等你审批        → approval/request (prepend)     ├→ 起 powershell -File notify.ps1 -Popup
-等你回答        → user-questions/request (prepend)┘        ↓
-                                                    WinForms 无边框窗口，GDI+ 手绘
+一轮结束        → agent/turn-stopping  → 写一个请求文件 ┐
+等你审批        → approval/request (prepend)             ├→ WinForms 无边框窗口，GDI+ 手绘
+等你回答        → user-questions/request (prepend)       ┘
 ```
 
 审批与提问这两个监听器**只是旁听**：它们用 `{ prepend: true }` 挂在瀑布流最前面，弹完卡立刻 `return next()` 把请求交回给原本的应答方（应用内的审批面板）。插件永远不代替你回答，也永远不阻塞请求——`notify()` 全程包在 `try/catch` 里，弹卡失败只会静默吞掉。
+
+### 常驻助手
+
+第一张「任务已结束」卡走冷路径（起一个 `powershell -File notify.ps1 -Popup`），同时顺手在后台拉一个常驻助手进程：它已经把 WinForms 与该脚本用的 interop 程序集加载好了，之后每张卡只需付建窗的钱。**稳态从 ~500ms 降到 ~50ms。**
+
+助手在**第一张卡**时才启动——你没让 DSH 弹过卡，就不会有这个进程。它跟着 DSH 走：宿主进程一消失，它就自己退出，不留后台残留。内存代价约 10MB 私有 / 20MB 工作集。
+
+**审批卡和提问卡不走这条路**：它们可能挂在屏幕上好几分钟，而助手一次只跑一张卡，会让排在后面的卡全堵住。所以只有生命周期固定的「任务已结束」卡进热路径，其余仍是各起一个进程。
 
 `notify.ps1` 是个独立脚本，也能单独用：
 
