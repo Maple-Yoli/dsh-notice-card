@@ -1,6 +1,6 @@
 {
   "name": "dsh-notice-card",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "DeepSeek Harness 桌面通知卡插件：一轮任务结束、等你审批、等你回答时，在屏幕右下角弹出一张不抢焦点的卡片。A DSH host plugin that shows a focus-free notice card in the bottom-right corner when a turn ends or DSH is waiting on a tool approval or a question.",
   "type": "module",
   "main": "lib/index.mjs",

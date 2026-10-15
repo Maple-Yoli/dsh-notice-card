@@ -81,13 +81,13 @@ Maple-Yoli/dsh-notice-card
 这些 profile 允许命令行装插件：
 
 ```bash
-dsh plugin add github:Maple-Yoli/dsh-notice-card
+dsh plugin --profile web add dsh-notice-card
 ```
 
-也可以直接装 npm 上的版本：
+也可以用 GitHub 源（不走 npm）：
 
 ```bash
-dsh plugin add dsh-notice-card
+dsh plugin --profile web add github:Maple-Yoli/dsh-notice-card
 ```
 
 `reconcilePlugins` 会读到你包里的 `dsh.bundle.patch`，自动把它加进 profile 的 `dsh.profile.bundles`，补丁随之生效。
