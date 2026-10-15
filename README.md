@@ -9,7 +9,8 @@
 ![出现与消失动画](assets/card-animation.gif)
 
 - 纯 Windows 桌面绘制（WinForms + GDI+），不依赖 Windows 通知中心，也不用打开系统通知权限
-- `WS_EX_NOACTIVATE` + `TopMost`：盖在所有窗口之上，但永不夺走焦点，全屏视频/游戏里也能看到
+- `WS_EX_NOACTIVATE` + `TopMost`：盖在所有窗口之上，但永不夺走焦点，你想打字就打
+- 独占全屏的游戏或视频在跑时自动让路，绝不打断画面
 - 卡片是独立进程，DSH 忙的时候也照弹；进程崩了也不影响 DSH 本身
 - 零网络、零遥测：插件不发任何请求，只在本地起一个 PowerShell 进程画窗口
 
@@ -128,6 +129,7 @@ dsh plugin --profile web add github:Maple-Yoli/dsh-notice-card
 ### 行为说明
 
 - **不抢焦点**：卡片创建时带 `WS_EX_NOACTIVATE`，并会把焦点还给原来那个窗口。你可以一直打字、一直全屏放视频。
+- **独占全屏时绕开**：游戏（或任何盖满屏幕的前台窗口）独占显示时，画一张普通顶层窗口会逼 Windows 切换显示模式，屏幕黑一下再回来（约 0.7 秒）。所以「任务已结束」卡会先等最多 10 秒——够你 alt-tab 出来看它——全屏还在就丢弃；审批/提问卡则会一直等到全屏结束，因为它是 agent 卡住时唯一的提示。
 - **点了才关**：点卡片右上角的 `✕` 立即收起；点窗口图标则把 DSH 窗口调到前台。不点的话，`seconds` 秒后淡出。
 - **审批卡不会自己消失**：审批/提问的卡会一直挂着，直到应用内面板真的把请求答完，然后才淡出。最少显示 1.2 秒，避免秒闪。
 - **压在最上层**：卡片进程自己声明 `HWND_TOPMOST`，跟其他置顶窗口抢顶时可能被挤到后面，属正常现象。
@@ -199,5 +201,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File lib\notify.ps1 -Popup -Title
 A focus-free notice card for DeepSeek Harness on Windows. It slides into the bottom-right corner when a turn finishes, when DSH is waiting for a tool approval, or when it is waiting for an answer to a question. Cards stack, oldest one front and fully visible.
 
 Pure host plugin: `agent/turn-stopping`, `approval/request` and `user-questions/request` → a detached PowerShell process draws a borderless WinForms window with GDI+. No notification-center permission, no network, no telemetry. The approval/question listeners only observe and delegate with `next()` — the built-in UI still answers.
+
+Cards stay out of the way while an exclusive-fullscreen game owns the display, because drawing one there forces the display mode to switch and the screen blinks black. A turn-end card waits up to ten seconds for you to alt-tab out and is dropped otherwise; an approval or question card waits however long it takes, since it is the only notice a blocked agent gets.
 
 Requires Windows, Node >= 20, and Windows PowerShell 5.1 (ships with Windows; PowerShell 7 is not needed). Install with `npm i dsh-notice-card` and add an insert to your profile's `cordis.patch.yml` pointing `name:` at the absolute path of `node_modules/dsh-notice-card/lib/index.mjs` (or clone the repo and point at `lib/index.mjs`); on the official Electron desktop app, install it from **Settings → Plugins** instead. See the Chinese section above for the full config table.

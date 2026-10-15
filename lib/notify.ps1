@@ -48,12 +48,13 @@ Add-Type -AssemblyName System.Drawing
 # Add-Type -TypeDefinition runs the C# compiler on every card (~100ms), which is
 # a visible slice of the gap between the in-app prompt and this card. The DLL
 # lives under %LOCALAPPDATA% rather than next to this script, because the script
-# is installed inside a node_modules tree that may be read-only. Delete the DLL
-# whenever the C# below changes, so it is rebuilt.
-$notifyDll = Join-Path (Join-Path $env:LOCALAPPDATA 'dsh-notice-card') 'NotifyWin.dll'
+# is installed inside a node_modules tree that may be read-only. The file name
+# carries a hash of the C# below, so editing it rebuilds the assembly instead of
+# loading a stale one that no longer has the methods this script calls.
 $notifySrc = @'
 using System;
 using System.Runtime.InteropServices;
+using System.Text;
 using System.Threading;
 using System.Windows.Forms;
 public class NotifyWin : IMessageFilter {
@@ -68,6 +69,41 @@ public class NotifyWin : IMessageFilter {
     [DllImport("user32.dll")] static extern bool PostMessage(IntPtr h, uint m, IntPtr w, IntPtr l);
     [DllImport("winmm.dll")] public static extern uint timeBeginPeriod(uint ms);
     [DllImport("winmm.dll")] public static extern uint timeEndPeriod(uint ms);
+
+    // --- fullscreen detection ---
+    // A card is a normal top-level window, so putting one on screen over an
+    // exclusive-fullscreen game forces the display mode to change and the screen
+    // blinks black for about a second. No single API answers "is a game
+    // exclusive-fullscreen": the shell's own state plus the shape of the
+    // foreground window do. The two cannot be told apart reliably from the
+    // outside, so anything that genuinely owns the whole screen is left alone
+    // for that moment; the card is late, not lost.
+    [DllImport("shell32.dll")] static extern int SHQueryUserNotificationState(out int state);
+    [DllImport("user32.dll")] static extern bool IsIconic(IntPtr h);
+    [DllImport("user32.dll")] static extern bool IsWindowVisible(IntPtr h);
+    [DllImport("user32.dll")] static extern bool GetWindowRect(IntPtr h, out RECT r);
+    [DllImport("user32.dll", CharSet = CharSet.Unicode)] static extern int GetClassNameW(IntPtr h, StringBuilder s, int n);
+    [StructLayout(LayoutKind.Sequential)] struct RECT { public int L, T, R, B; }
+
+    // QUNS_BUSY (2) is raised for any full-screen app, QUNS_RUNNING_D3D_FULL_SCREEN
+    // (3) only for a real exclusive one, QUNS_PRESENTATION_MODE (4) for a
+    // projector. Anything else means the shell is willing to be interrupted and
+    // there is nothing to protect. The shell states alone over-report, so the
+    // foreground window has to cover the screen as well.
+    public static bool FullScreen() {
+        int state;
+        if (SHQueryUserNotificationState(out state) != 0) return false;
+        if (state != 2 && state != 3 && state != 4) return false;
+        IntPtr h = GetForegroundWindow();
+        if (h == IntPtr.Zero || IsIconic(h) || !IsWindowVisible(h)) return false;
+        RECT r; if (!GetWindowRect(h, out r)) return false;
+        if (r.R - r.L < Screen.PrimaryScreen.Bounds.Width || r.B - r.T < Screen.PrimaryScreen.Bounds.Height) return false;
+        // The shell draws the desktop itself; it owns the screen and is not a game.
+        StringBuilder cls = new StringBuilder(64);
+        GetClassNameW(h, cls, 64);
+        string c = cls.ToString();
+        return c != "Progman" && c != "WorkerW";
+    }
 
     // WinForms' own Timer rides WM_TIMER, which the OS coalesces to the 15.6ms
     // system tick: a 8ms Interval really paints at ~55fps with jitter up to
@@ -110,11 +146,15 @@ public class NotifyWin : IMessageFilter {
     }
 }
 '@
+$sha = [System.Security.Cryptography.SHA256]::Create()
+$stamp = [System.BitConverter]::ToString($sha.ComputeHash([System.Text.Encoding]::UTF8.GetBytes($notifySrc))).Replace('-', '').Substring(0, 16)
+$sha.Dispose()
+$notifyDll = Join-Path (Join-Path $env:LOCALAPPDATA 'dsh-notice-card') "NotifyWin-$stamp.dll"
 if (-not (Test-Path -LiteralPath $notifyDll)) {
     $null = New-Item -ItemType Directory -Path (Split-Path -Parent $notifyDll) -Force
     # -OutputAssembly only writes the DLL, it does not load it, so the Add-Type
     # -Path below is what actually makes the type available on this first run.
-    Add-Type -TypeDefinition $notifySrc -OutputAssembly $notifyDll -ReferencedAssemblies System.Windows.Forms
+    Add-Type -TypeDefinition $notifySrc -OutputAssembly $notifyDll -ReferencedAssemblies System.Windows.Forms, System.Drawing
 }
 Add-Type -Path $notifyDll
 
@@ -185,6 +225,32 @@ $null = [NotifyWin]::SetProcessDpiAwarenessContext(-4)
 # what lets the entrance animation actually hit its interval. Released at the
 # end of the script so the card does not tax the whole desktop while it lives.
 $null = [NotifyWin]::timeBeginPeriod(1)
+
+# A card is an ordinary top-level window, so drawing one over an exclusive
+# fullscreen game makes Windows switch the display out of that mode: the screen
+# blinks black for about a second and then comes back. The fix is not to draw the
+# card there at all. A card whose whole message is "this turn is over" is worth
+# nothing minutes later, so it waits only briefly for the screen to come back;
+# the ten seconds cover alt-tabbing out, which is when the notice is still
+# useful. A card that waits for an answer is the only notice a blocked agent
+# gets, so it waits as long as it takes.
+$waitMs = if ($DismissFile) { -1 } else { 10000 }
+if ([NotifyWin]::FullScreen()) {
+    # return, not exit: in serve mode this same text runs inside a runspace, and
+    # exit there would tear the runspace down and take the helper with it.
+    $spent = 0
+    while ([NotifyWin]::FullScreen() -and ($waitMs -lt 0 -or $spent -lt $waitMs)) {
+        if ($DismissFile -and (Test-Path -LiteralPath $DismissFile)) { break }
+        Start-Sleep -Milliseconds 300
+        $spent += 300
+    }
+    # Nothing left to say if the question was answered while it waited, and
+    # nothing worth saying if a turn-end card has gone stale.
+    if ([NotifyWin]::FullScreen() -or ($DismissFile -and (Test-Path -LiteralPath $DismissFile))) {
+        $null = [NotifyWin]::timeEndPeriod(1)
+        return
+    }
+}
 
 # Cards form a deck instead of replacing each other. Every live card drops one
 # file named by its creation stamp into a shared directory and re-reads that
