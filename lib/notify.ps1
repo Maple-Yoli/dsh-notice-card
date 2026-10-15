@@ -16,12 +16,18 @@ param(
     # knows where DSH lives), so nothing machine-specific is hardcoded here.
     [string] $ProcessName = 'DeepSeek Harness',
     [string] $AppPath = '',
-    [switch] $Popup
+    [switch] $Popup,
+    # Serve mode: the plugin starts one of these beside DSH. It stays resident
+    # with WinForms and the interop assembly already loaded and re-runs this
+    # same file in-process per request, so a card costs what building the window
+    # costs instead of a full PowerShell start.
+    [string] $ServeDir = '',
+    [int]    $OwnerPid = 0
 )
 
 $exe = "$($env:SystemRoot)\System32\WindowsPowerShell\v1.0\powershell.exe"
 
-if (-not $Popup) {
+if (-not $Popup -and -not $ServeDir) {
     # Show the card from a detached child so the caller (a hook command, or the
     # approval/request listener) never blocks on the message loop.
     $args = @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', "`"$PSCommandPath`"",
@@ -111,6 +117,61 @@ if (-not (Test-Path -LiteralPath $notifyDll)) {
     Add-Type -TypeDefinition $notifySrc -OutputAssembly $notifyDll -ReferencedAssemblies System.Windows.Forms
 }
 Add-Type -Path $notifyDll
+
+# --- serve mode ---
+# One of these runs beside DSH, so a card does not have to start PowerShell and
+# load the interop assembly every time. Everything above is already warm here,
+# which is the expensive half of the cold path; a request only pays for the card
+# itself. Each request still runs this whole file in its own script scope on a
+# dedicated STA thread, one card at a time: the interop shim keeps its frame
+# pump in static fields, so two live cards in one process would fight over it.
+if ($ServeDir) {
+    $cardText = [System.IO.File]::ReadAllText($PSCommandPath)
+    $rs = [runspacefactory]::CreateRunspace()
+    $rs.ApartmentState = 'STA'
+    $rs.ThreadOptions = 'ReuseThread'
+    $rs.Open()
+    $null = New-Item -ItemType Directory -Path $ServeDir -Force
+    [System.IO.File]::WriteAllText((Join-Path $ServeDir 'ready.host'), '')
+    $idle = 0
+    while ($true) {
+        $reqs = [System.IO.Directory]::GetFiles($ServeDir, '*.req')
+        if ($reqs.Length -eq 0) {
+            # Dying with DSH is the whole shutdown story: no signal channel and
+            # nothing to clean up, so checking the owner every ~0.6s of idle is
+            # enough and keeps the poll loop cheap.
+            $idle++
+            if ($idle -ge 40) {
+                $idle = 0
+                if ($OwnerPid -gt 0 -and -not (Get-Process -Id $OwnerPid -ErrorAction SilentlyContinue)) { break }
+            }
+            Start-Sleep -Milliseconds 15
+            continue
+        }
+        [Array]::Sort($reqs)
+        foreach ($f in $reqs) {
+            $data = $null
+            try { $data = [System.IO.File]::ReadAllText($f) | ConvertFrom-Json } catch { }
+            Remove-Item -LiteralPath $f -Force -ErrorAction SilentlyContinue
+            if ($null -eq $data) { continue }
+            $ps = [powershell]::Create()
+            $ps.Runspace = $rs
+            $cmd = $ps.AddScript([scriptblock]::Create($cardText))
+            $null = $cmd.AddParameter('Popup', $true)
+            $null = $cmd.AddParameter('Title', [string]$data.title)
+            $null = $cmd.AddParameter('Body', [string]$data.body)
+            $null = $cmd.AddParameter('Seconds', [int]$data.seconds)
+            if ($data.dismiss) { $null = $cmd.AddParameter('DismissFile', [string]$data.dismiss) }
+            if ($data.processName) { $null = $cmd.AddParameter('ProcessName', [string]$data.processName) }
+            if ($data.appPath) { $null = $cmd.AddParameter('AppPath', [string]$data.appPath) }
+            try { $null = $ps.EndInvoke($ps.BeginInvoke()) } catch { }
+            $ps.Dispose()
+        }
+    }
+    $rs.Close()
+    Remove-Item -LiteralPath $ServeDir -Recurse -Force -ErrorAction SilentlyContinue
+    exit 0
+}
 
 # Without this the process stays system-DPI aware: on a 125% display the form is
 # laid out at 96dpi and the shell stretches the bitmap, which is exactly the
