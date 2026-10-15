@@ -3,3 +3,6 @@ node_modules/
 *.tmp
 .DS_Store
 Thumbs.db
+
+# local capture/scratch screenshots, not part of the published package
+预览图-previews/
