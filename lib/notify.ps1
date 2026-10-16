@@ -144,6 +144,104 @@ public class NotifyWin : IMessageFilter {
         if (f != null) { try { f(); } catch {} }
         return true;
     }
+
+    // --- watchdog primitives ---
+    // Opacity starts at 0 and is lifted only by the frame pump above, and the
+    // ten-second safety net is a WinForms timer that rides WM_TIMER. Both live
+    // on the card's own message loop, so if that loop stalls the window stays
+    // alive, topmost and visible while showing nothing at all — a card nobody can
+    // see and that never goes away. These need neither the message loop nor the
+    // UI thread, so a watchdog on a pool thread can always rescue the card.
+    //
+    // Both deliberately avoid touching the form object. The pool thread has no
+    // idea whether the UI thread is inside ShowDialog's nested loop, and poking a
+    // window that is pumping messages from another thread is what turns a stuck
+    // card into a dead one: these are pure Win32 calls on the handle instead.
+    [DllImport("user32.dll")] public static extern bool SetLayeredWindowAttributes(IntPtr h, uint crKey, byte alpha, uint flags);
+    [DllImport("user32.dll")] public static extern bool GetLayeredWindowAttributes(IntPtr h, out uint crKey, out byte alpha, out uint flags);
+    [DllImport("user32.dll")] public static extern bool DestroyWindow(IntPtr h);
+    const uint LWA_ALPHA = 0x2;
+    const uint WM_CLOSE = 0x0010;
+    public static byte CurrentAlpha(IntPtr h) {
+        uint k, f; byte a;
+        if (!GetLayeredWindowAttributes(h, out k, out a, out f)) return 255;
+        return (f & LWA_ALPHA) != 0 ? a : (byte)255;
+    }
+    public static void ForceClose(IntPtr h) {
+        if (!IsWindow(h)) return;
+        PostMessage(h, WM_CLOSE, IntPtr.Zero, IntPtr.Zero);
+        Thread.Sleep(500);
+        if (IsWindow(h)) { try { DestroyWindow(h); } catch {} }
+    }
+
+    // The watchdog runs off the message loop, and off PowerShell too. A
+    // ScriptBlock handed to a thread-pool timer has no runspace on that thread:
+    // the callback dies inside ScriptBlock.GetContextFromTLS with a
+    // PSInvalidOperation and takes the whole process down with it — which is how
+    // a served card killed its own helper about six seconds in, right when the
+    // watchdog was due. So the state and both timers live here, on plain fields,
+    // and PowerShell only hands over a handle and a couple of numbers.
+    static IntPtr wdHandle = IntPtr.Zero;
+    static int wdX, wdY;
+    static System.Threading.Timer wdSettle, wdLife;
+    static bool wdSettleArmed;
+    static readonly object wdLock = new object();
+
+    // lifeMs <= 0 means no hard deadline: dismiss-driven cards wait for an answer
+    // and the answer has no deadline.
+    public static void ArmWatchdog(IntPtr h, int x, int y, int settleMs, int lifeMs) {
+        DisarmWatchdog();
+        lock (wdLock) {
+            wdHandle = h; wdX = x; wdY = y; wdSettleArmed = true;
+            wdSettle = new System.Threading.Timer(Settle, null, settleMs, Timeout.Infinite);
+            if (lifeMs > 0) wdLife = new System.Threading.Timer(Expire, null, lifeMs, Timeout.Infinite);
+        }
+    }
+    public static void DisarmSettle() {
+        lock (wdLock) {
+            wdSettleArmed = false;
+            if (wdSettle != null) { try { wdSettle.Dispose(); } catch {} wdSettle = null; }
+        }
+    }
+    public static void DisarmWatchdog() {
+        DisarmSettle();
+        lock (wdLock) {
+            wdHandle = IntPtr.Zero;
+            if (wdLife != null) { try { wdLife.Dispose(); } catch {} wdLife = null; }
+        }
+    }
+
+    // Still transparent well after the entrance should have finished — the pump
+    // stopped, the loop is stuck, a message was lost — so paint it opaque and put
+    // it back in its slot. A card that animated on its own is never touched,
+    // because the alpha check gates this.
+    static void Settle(object _) {
+        IntPtr h; int x, y;
+        lock (wdLock) {
+            // DisarmSettle can run after this callback is already queued, and by
+            // then the card may be fading out under its own power: forcing it
+            // opaque mid-fade would put a leaving card back on screen.
+            if (!wdSettleArmed) return;
+            h = wdHandle; x = wdX; y = wdY;
+        }
+        // The Win32 calls stay outside the lock. SetWindowPos can block when the
+        // window belongs to the thread that is stuck, and the deadline timer has
+        // to stay able to fire while that happens.
+        if (h == IntPtr.Zero || !IsWindow(h)) return;
+        if (CurrentAlpha(h) >= 250) return;
+        try { SetLayeredWindowAttributes(h, 0, 255, LWA_ALPHA); } catch {}
+        SetWindowPos(h, (IntPtr)(-1), x, y, 0, 0, 0x0010 | 0x0001);
+    }
+
+    // The hard lifetime bound, independent of the WinForms life timer. Fires only
+    // if the card is somehow still up long after it should have gone, at which
+    // point there is nothing left to animate and closing it abruptly is right.
+    static void Expire(object _) {
+        IntPtr h;
+        lock (wdLock) { h = wdHandle; wdHandle = IntPtr.Zero; }
+        if (h == IntPtr.Zero) return;
+        ForceClose(h);
+    }
 }
 '@
 $sha = [System.Security.Cryptography.SHA256]::Create()
@@ -650,6 +748,12 @@ $null = New-IconButton (420 - 32) {
     $pen.Dispose()
 } $close
 
+# How long the card may stay up before it is closed by force, with no animation
+# and no grace: the life timer is the graceful path and this is the backstop for
+# when that timer itself is stuck. Dismiss-driven cards get no deadline, because
+# they wait for an answer and the answer has none.
+$hardMs = if ($DismissFile) { 0 } else { [int]([Math]::Max(1, $Seconds) * 1000) + 3000 }
+
 $form.Add_Shown({
     $h = $form.Handle
     # The card's own handle is what the deck ordering is anchored on, so it is
@@ -669,6 +773,10 @@ $form.Add_Shown({
     $null = [NotifyWin]::SetWindowPos($h, [IntPtr]::new(-1), 0, 0, 0, 0, 0x0010 -bor 0x0001 -bor 0x0002)
     if ($previous -ne [IntPtr]::Zero) { $null = [NotifyWin]::SetForegroundWindow($previous) }
     [NotifyWin]::StartPump($h, 4)
+    # Armed only once the handle is real, and given the slot this card actually
+    # landed in rather than the one it was aimed at, so a rescue puts it back
+    # where the deck put it.
+    [NotifyWin]::ArmWatchdog($h, $targetX, $form.Location.Y, 1000, $hardMs)
     $life.Start()
     $reflow.Start()
     if ($watch) { $watch.Start() }
@@ -742,6 +850,10 @@ $script:exitFromY = 0
 $beginExit = {
     if ($script:exiting) { return }
     $script:exiting = $true
+    # The card is on its way out under its own power, so the rescue has nothing
+    # left to rescue; the hard deadline stays armed, because the whole point of
+    # it is the case where this fade never finishes.
+    [NotifyWin]::DisarmSettle()
     $life.Stop()
     $reflow.Stop()
     if ($watch) { $watch.Stop() }
@@ -794,6 +906,10 @@ if ($DismissFile) {
 # ShowDialog runs a real message loop, so the window is actually created and
 # clicks land; the timers above bound how long it lives.
 $null = $form.ShowDialog()
+# The card is gone, so nothing is left for either timer to guard. Disarming here
+# also matters in serve mode, where this same runspace hosts the next card: a
+# stray deadline from this one would close that one early.
+[NotifyWin]::DisarmWatchdog()
 [NotifyWin]::StopPump()
 $life.Dispose()
 $reflow.Dispose()
