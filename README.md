@@ -34,7 +34,7 @@
 ### 方式一：从 npm 装（不用 clone，推荐）
 
 ```bash
-npm i dsh-notice-card@0.1.5
+npm i dsh-notice-card@0.1.6
 ```
 
 在装它的目录里能拿到 `node_modules/dsh-notice-card/`，然后在你的 profile 的 `cordis.patch.yml` 末尾追加：
@@ -53,7 +53,7 @@ npm i dsh-notice-card@0.1.5
 ### 方式二：手动挂载（clone 源码，适合要改代码）
 
 ```bash
-git clone --branch v0.1.5 https://github.com/Maple-Yoli/dsh-notice-card.git
+git clone --branch v0.1.6 https://github.com/Maple-Yoli/dsh-notice-card.git
 ```
 
 打开你的 profile 目录下的 `cordis.patch.yml`（默认在 `%USERPROFILE%\.dsh\profiles\<profile>\cordis.patch.yml`），在末尾追加：
@@ -84,13 +84,13 @@ Maple-Yoli/dsh-notice-card
 这些 profile 允许命令行装插件：
 
 ```bash
-dsh plugin --profile web add dsh-notice-card@0.1.5
+dsh plugin --profile web add dsh-notice-card@0.1.6
 ```
 
 也可以用 GitHub 源（不走 npm）：
 
 ```bash
-dsh plugin --profile web add github:Maple-Yoli/dsh-notice-card#v0.1.5
+dsh plugin --profile web add github:Maple-Yoli/dsh-notice-card#v0.1.6
 ```
 
 `reconcilePlugins` 会读到你包里的 `dsh.bundle.patch`，自动把它加进 profile 的 `dsh.profile.bundles`，补丁随之生效。
@@ -214,6 +214,6 @@ Pure host plugin: `agent/turn-stopping`, `approval/request` and `user-questions/
 
 Cards stay out of the way while an exclusive-fullscreen game owns the display, because drawing one there forces the display mode to switch and the screen blinks black. A turn-end card waits up to ten seconds for you to alt-tab out and is dropped otherwise; an approval or question card waits however long it takes, since it is the only notice a blocked agent gets.
 
-Requires Windows, Node >= 20, and Windows PowerShell 5.1 (ships with Windows; PowerShell 7 is not needed). Install with `npm i dsh-notice-card@0.1.5` and add an insert to your profile's `cordis.patch.yml` pointing `name:` at the absolute path of `node_modules/dsh-notice-card/lib/index.mjs` (or clone the repo at tag `v0.1.5` and point at `lib/index.mjs`); on the official Electron desktop app, install it from **Settings → Plugins** instead. See the Chinese section above for the full config table.
+Requires Windows, Node >= 20, and Windows PowerShell 5.1 (ships with Windows; PowerShell 7 is not needed). Install with `npm i dsh-notice-card@0.1.6` and add an insert to your profile's `cordis.patch.yml` pointing `name:` at the absolute path of `node_modules/dsh-notice-card/lib/index.mjs` (or clone the repo at tag `v0.1.6` and point at `lib/index.mjs`); on the official Electron desktop app, install it from **Settings → Plugins** instead. See the Chinese section above for the full config table.
 
 **Found a bug or have a suggestion?** Open an issue at [github.com/Maple-Yoli/dsh-notice-card/issues](https://github.com/Maple-Yoli/dsh-notice-card/issues). Include your Windows version, DSH version, card type (turn end / approval / question) and the steps to reproduce. The plugin sends no requests and has no built-in feedback channel, so issues are the only way to reach the author.
