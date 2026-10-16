@@ -4,6 +4,8 @@
 
 多张卡自动叠成一摞，**最先出现的那张完整显示在最前面**，后来的卡依次往上垫、只露出标题条。
 
+> **遇到问题或有建议？** [Issues](https://github.com/Maple-Yoli/dsh-notice-card/issues) —— 卡片不弹、动画卡顿、位置不对、想要新功能，都发在那里。
+
 ![卡片叠放示例](assets/card-deck.png)
 
 ![出现与消失动画](assets/card-animation.gif)
@@ -32,7 +34,7 @@
 ### 方式一：从 npm 装（不用 clone，推荐）
 
 ```bash
-npm i dsh-notice-card@0.1.4
+npm i dsh-notice-card@0.1.5
 ```
 
 在装它的目录里能拿到 `node_modules/dsh-notice-card/`，然后在你的 profile 的 `cordis.patch.yml` 末尾追加：
@@ -51,7 +53,7 @@ npm i dsh-notice-card@0.1.4
 ### 方式二：手动挂载（clone 源码，适合要改代码）
 
 ```bash
-git clone --branch v0.1.4 https://github.com/Maple-Yoli/dsh-notice-card.git
+git clone --branch v0.1.5 https://github.com/Maple-Yoli/dsh-notice-card.git
 ```
 
 打开你的 profile 目录下的 `cordis.patch.yml`（默认在 `%USERPROFILE%\.dsh\profiles\<profile>\cordis.patch.yml`），在末尾追加：
@@ -82,13 +84,13 @@ Maple-Yoli/dsh-notice-card
 这些 profile 允许命令行装插件：
 
 ```bash
-dsh plugin --profile web add dsh-notice-card@0.1.4
+dsh plugin --profile web add dsh-notice-card@0.1.5
 ```
 
 也可以用 GitHub 源（不走 npm）：
 
 ```bash
-dsh plugin --profile web add github:Maple-Yoli/dsh-notice-card#v0.1.4
+dsh plugin --profile web add github:Maple-Yoli/dsh-notice-card#v0.1.5
 ```
 
 `reconcilePlugins` 会读到你包里的 `dsh.bundle.patch`，自动把它加进 profile 的 `dsh.profile.bundles`，补丁随之生效。
@@ -190,6 +192,14 @@ powershell -NoProfile -ExecutionPolicy Bypass -File lib\notify.ps1 -Popup -Title
 - 与 DSH 的唯一交互就是上面那三个事件，卡片上显示的只有事件自带的工具名/问题文本
 - 卡片的 C# 编译产物缓存在 `%LOCALAPPDATA%\dsh-notice-card\`，卸载时删掉即可
 
+## 反馈
+
+**遇到问题或有建议，请到 [Issues](https://github.com/Maple-Yoli/dsh-notice-card/issues)** —— 卡片不弹、动画卡顿、位置不对、想要新功能，都发在那里。
+
+提问时附上：Windows 版本、DSH 版本、卡片类型（任务结束 / 审批 / 提问）、复现步骤。带截图或录屏最好。
+
+> 插件不发任何请求，也没有内置反馈入口。作者看不到你的使用情况，只能靠你主动说。
+
 ## License
 
 [MIT](LICENSE)
@@ -204,4 +214,6 @@ Pure host plugin: `agent/turn-stopping`, `approval/request` and `user-questions/
 
 Cards stay out of the way while an exclusive-fullscreen game owns the display, because drawing one there forces the display mode to switch and the screen blinks black. A turn-end card waits up to ten seconds for you to alt-tab out and is dropped otherwise; an approval or question card waits however long it takes, since it is the only notice a blocked agent gets.
 
-Requires Windows, Node >= 20, and Windows PowerShell 5.1 (ships with Windows; PowerShell 7 is not needed). Install with `npm i dsh-notice-card@0.1.4` and add an insert to your profile's `cordis.patch.yml` pointing `name:` at the absolute path of `node_modules/dsh-notice-card/lib/index.mjs` (or clone the repo at tag `v0.1.4` and point at `lib/index.mjs`); on the official Electron desktop app, install it from **Settings → Plugins** instead. See the Chinese section above for the full config table.
+Requires Windows, Node >= 20, and Windows PowerShell 5.1 (ships with Windows; PowerShell 7 is not needed). Install with `npm i dsh-notice-card@0.1.5` and add an insert to your profile's `cordis.patch.yml` pointing `name:` at the absolute path of `node_modules/dsh-notice-card/lib/index.mjs` (or clone the repo at tag `v0.1.5` and point at `lib/index.mjs`); on the official Electron desktop app, install it from **Settings → Plugins** instead. See the Chinese section above for the full config table.
+
+**Found a bug or have a suggestion?** Open an issue at [github.com/Maple-Yoli/dsh-notice-card/issues](https://github.com/Maple-Yoli/dsh-notice-card/issues). Include your Windows version, DSH version, card type (turn end / approval / question) and the steps to reproduce. The plugin sends no requests and has no built-in feedback channel, so issues are the only way to reach the author.
