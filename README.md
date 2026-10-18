@@ -1,112 +1,120 @@
 # Notice Card
 
-给 DeepSeek Harness 的一张桌面通知卡：**一轮任务跑完**、**等你审批工具调用**、**等你回答问题**时，屏幕右下角滑出一张卡片，不抢焦点、不打断你正在做的事。
+给 DeepSeek Harness 用的通知卡，只支持 Windows。
 
-多张卡自动叠成一摞，**最先出现的那张完整显示在最前面**，后来的卡依次往上垫、只露出标题条。
+下面三件事发生时，屏幕右下角会出现一张卡片：
 
-> **遇到问题或有建议？** [Issues](https://github.com/Maple-Yoli/dsh-notice-card/issues) —— 卡片不弹、动画卡顿、位置不对、想要新功能，都发在那里。
+- 一轮任务跑完
+- DSH 等你审批工具调用
+- DSH 等你回答一个问题
+
+卡片盖在其他窗口上面，但不会抢走你的焦点。你可以继续打字，也可以继续全屏看视频。
+
+同时来了好几个事件，卡片会叠成一摞。最早出现的那张在最前面、完整显示，后面的只露出标题。
+
+> **遇到问题或有建议**：写到 [Issues](https://github.com/Maple-Yoli/dsh-notice-card/issues)。卡片不弹、动画卡顿、位置不对、想要新功能，都发在那里。
 >
-> **每个版本改了什么？** [Releases](https://github.com/Maple-Yoli/dsh-notice-card/releases) —— 每版更新内容中英文都写在那里，装之前可以先看。
+> **每个版本改了什么**：写在 [Releases](https://github.com/Maple-Yoli/dsh-notice-card/releases)，中文和英文都有。
 
 ![卡片叠放示例](assets/card-deck.png)
 
 ![出现与消失动画](assets/card-animation.gif)
 
-- 纯 Windows 桌面绘制（WinForms + GDI+），不依赖 Windows 通知中心，也不用打开系统通知权限
-- `WS_EX_NOACTIVATE` + `TopMost`：盖在所有窗口之上，但永不夺走焦点，你想打字就打
-- 独占全屏的游戏在跑时先让路 2 秒，之后照常弹出，绝不丢提示；无边框全屏视频、F11 浏览器不触发让路
-- 卡片是独立进程，DSH 忙的时候也照弹；进程崩了也不影响 DSH 本身
-- 零网络、零遥测：插件不发任何请求，只在本地起一个进程画窗口
+- 卡片自己画窗口，不用 Windows 通知中心，也不用开系统通知权限
+- 卡片是独立进程。DSH 忙着的时候照弹，卡片崩了也不影响 DSH
+- 不发任何网络请求，不收集任何数据
 
 ## 环境要求
 
 | 项目 | 要求 |
 | --- | --- |
-| 平台 | Windows（`os: win32`） |
-| DSH | `>= 0.1.0-rc.1` |
-| Node | `>= 20`（只给宿主加载插件用） |
-| 运行时 | .NET Framework 4.x（系统自带；`csc.exe` 编译一次，**不需要** PowerShell 7） |
+| 系统 | Windows |
+| DSH | 0.1.0-rc.1 或更高 |
+| Node | 20 或更高（只有 DSH 加载插件时用得到） |
+| .NET Framework | 4.x，Windows 自带，不用另外装 |
 
-> 卡片的绘制逻辑是一段 C#（`lib/card.cs`）。第一次弹卡时插件调用系统自带的 `csc.exe` 把它编译成一个 exe，缓存到 `%LOCALAPPDATA%\dsh-notice-card\card-<版本哈希>.exe`。仓库不含任何预编译产物，也不下载任何东西。
+卡片的界面是一段 C# 代码，放在 `lib/card.cs`。第一次弹卡时，插件用系统自带的 `csc.exe` 把它编译成一个 exe，存到 `%LOCALAPPDATA%\dsh-notice-card\`，以后直接复用。仓库里没有编译好的文件，也不会下载任何东西。
 
 ## 安装
 
-插件是纯 Host 插件（`dsh.bundle.patch`），有四种装法，按你的 DSH 形态选一种。
+四种方式，按你的 DSH 是哪种形态选一种，不要同时用两种。
 
-### 方式一：从 npm 装（不用 clone，推荐）
+### 方式一：从 npm 装
 
 ```bash
 npm i dsh-notice-card@0.1.7
 ```
 
-在装它的目录里能拿到 `node_modules/dsh-notice-card/`，然后在你的 profile 的 `cordis.patch.yml` 末尾追加：
+装完之后，打开你的 profile 目录下的 `cordis.patch.yml`（默认在 `%USERPROFILE%\.dsh\profiles\<你的 profile 名>\`），在文件最后加上：
 
 ```yaml
 - insert:
     - id: notice-card
-      name: C:/path/to/node_modules/dsh-notice-card/lib/index.mjs
+      name: C:/你执行 npm i 的目录/node_modules/dsh-notice-card/lib/index.mjs
       config: {}
 ```
 
-把 `C:/path/to` 换成你执行 `npm i` 的目录，**路径用正斜杠**。
+`name:` 那里要写完整的绝对路径，路径里的斜杠用 `/`。
 
-> 包一旦发布到 registry 就是长期可装的，装的人不需要账号也不需要令牌。作者的发布令牌只在**推新版本**时用得上，跟别人安装无关。
+> 包装到 npm 上之后，谁都能装，装的人不需要账号，也不需要令牌。作者的发布令牌只在推新版本时用，跟别人安装无关。
 
-### 方式二：手动挂载（clone 源码，适合要改代码）
+### 方式二：clone 源码
+
+想改代码就用这种。
 
 ```bash
 git clone --branch v0.1.7 https://github.com/Maple-Yoli/dsh-notice-card.git
 ```
 
-打开你的 profile 目录下的 `cordis.patch.yml`（默认在 `%USERPROFILE%\.dsh\profiles\<profile>\cordis.patch.yml`），在末尾追加：
+然后在 profile 的 `cordis.patch.yml` 最后加上：
 
 ```yaml
 - insert:
     - id: notice-card
-      name: C:/path/to/dsh-notice-card/lib/index.mjs
+      name: C:/你克隆的目录/dsh-notice-card/lib/index.mjs
       config: {}
 ```
 
-把 `C:/path/to/dsh-notice-card` 换成你实际的克隆路径，**路径用正斜杠**。
+新加的 `id` 会被 DSH 立即加载，不用重启。如果没有反应，完全退出 DSH 再打开一次。
 
-DSH 支持补丁热重载：新增的 `id` 会被立即加载，不用重启。如果没反应，完全退出 DSH 再开一次。
+### 方式三：官方桌面端
 
-### 方式三：官方桌面端（Electron 应用）
+官方桌面端的 `desktop` profile 由应用自己管理，命令行的 `dsh plugin --profile desktop add` 会被拒绝。
 
-官方桌面端的 `desktop` profile 由应用自己独占，命令行 `dsh plugin --profile desktop add` 会被拒绝。请走应用内的 **设置 → 插件**，用仓库地址安装：
+在应用里打开 **设置 → 插件**，填仓库地址：
 
 ```
 Maple-Yoli/dsh-notice-card
 ```
 
-安装完成后插件作为 bundle 自动挂载，无需手工改 patch。
+装完之后插件会自动挂上，不用改 patch 文件。
 
-### 方式四：`dsh web` / 自建 profile
+### 方式四：`dsh web` 或自己建的 profile
 
-这些 profile 允许命令行装插件：
+这些 profile 允许用命令行装插件。
 
 ```bash
 dsh plugin --profile web add dsh-notice-card@0.1.7
 ```
 
-也可以用 GitHub 源（不走 npm）：
+也可以直接用 GitHub 源，不走 npm：
 
 ```bash
 dsh plugin --profile web add github:Maple-Yoli/dsh-notice-card#v0.1.7
 ```
 
-`reconcilePlugins` 会读到你包里的 `dsh.bundle.patch`，自动把它加进 profile 的 `dsh.profile.bundles`，补丁随之生效。
+DSH 会读到你包里的 `dsh.bundle.patch`，自动把它加进 profile 的 `dsh.profile.bundles`。
 
-> 不要同时用两种方式挂载，否则同一个插件会被加载两次、每件事弹两张卡。
+> 同时用两种方式挂载，同一个插件会被加载两次，每件事会弹两张卡。
 
 ## 配置
 
-在 patch 的 `config:` 里传，例如只关掉「任务结束」的提示：
+配置写在 patch 的 `config:` 里。比如只关掉「任务结束」的提示：
 
 ```yaml
 - insert:
     - id: notice-card
-      name: C:/path/to/dsh-notice-card/lib/index.mjs
+      name: C:/你克隆的目录/dsh-notice-card/lib/index.mjs
       config:
         onTurnEnd: false
         seconds: 20
@@ -116,86 +124,85 @@ dsh plugin --profile web add github:Maple-Yoli/dsh-notice-card#v0.1.7
 | --- | --- | --- |
 | `onTurnEnd` | `true` | 一轮任务结束时弹卡 |
 | `onApproval` | `true` | DSH 等你审批工具调用时弹卡 |
-| `onQuestion` | `true` | DSH 等你回答问题（`ask_user_question`）时弹卡 |
-| `seconds` | `10` | 任务结束卡的存活秒数；审批/提问卡不看这个值，不自动消失 |
+| `onQuestion` | `true` | DSH 等你回答问题时弹卡 |
+| `seconds` | `10` | 任务结束卡停留几秒。审批卡和提问卡不看这个值，它们不会自己消失 |
 | `turnEndTitle` | `任务已结束` | 任务结束卡的标题 |
 | `turnEndBody` | `DSH 已完成本轮任务，等你下一步。` | 任务结束卡的正文 |
 | `approvalTitle` | `等你审批` | 审批卡的标题 |
-| `approvalBody` | `工具：{tool}{reason}` | 审批卡的正文模板，`{tool}` 为工具名，`{reason}` 为审批理由 |
+| `approvalBody` | `工具：{tool}{reason}` | 审批卡的正文模板。`{tool}` 是工具名，`{reason}` 是审批理由 |
 | `questionTitle` | `等你回答` | 提问卡的标题 |
-| `questionBody` | `问题：{question}` | 提问卡的正文模板，`{question}` 为问题文本 |
-| `processName` | 自动推断 | 点卡片右上角窗口图标时聚焦的进程名 |
-| `appPath` | 自动推断 | 该进程不在时启动的可执行文件路径 |
+| `questionBody` | `问题：{question}` | 提问卡的正文模板。`{question}` 是问题内容 |
+| `processName` | 自动推断 | 点卡片右上角窗口图标时，切到哪个进程 |
+| `appPath` | 自动推断 | 那个进程没开时，启动哪个 exe |
 
-`processName` 与 `appPath` 默认从宿主进程推出来：桌面端下是 `DeepSeek Harness` 和它的 exe 路径。如果你用别的壳跑 DSH，改成对应值即可；两个都留空则窗口图标只关卡片、不聚焦。
+`processName` 和 `appPath` 默认从 DSH 进程推出来，桌面端下就是 `DeepSeek Harness` 和它的 exe 路径。用别的壳跑 DSH 就改成对应的值。两个都留空，点窗口图标只会关掉卡片，不会切窗口。
 
-### 行为说明
+## 卡片怎么工作
 
-- **不抢焦点**：卡片创建时带 `WS_EX_NOACTIVATE`，并会把焦点还给原来那个窗口。你可以一直打字、一直全屏放视频。
-- **独占全屏时绕开**：只有真正的独占模式（D3D 全屏游戏、演示模式）才需要绕开——在那上面画普通顶层窗口会逼 Windows 切换显示模式，屏幕黑一下再回来（约 0.7 秒）。这种时候卡片先等 2 秒：游戏正好在关、或你 alt-tab 出来，它就正常弹出；2 秒后还独占就照画不误，宁可闪一下也不丢提示。无边框全屏播放器、F11 浏览器属于 QUNS_BUSY，合成器还在跑，卡片直接盖上去，不会黑屏。
-- **点了才关**：点卡片右上角的 `✕` 立即收起；点窗口图标则把 DSH 窗口调到前台。任务结束卡不点的话，`seconds` 秒后淡出。
-- **审批卡不会自己消失**：审批/提问的卡没有任何超时。请求答完只是第一步——卡片还要看到 DSH 真正被切到前台过，两个条件都满足才淡出。这样「请求被后台答掉了、但你一眼没看见」时卡片会留在屏幕上，不会让对话卡在那儿没人管。请求在没开后门前被答完的路子确实存在：回合被中止、审批策略是 `never` 自动拒、或者 ACP/远程客户端替你答了。最少显示 1.2 秒，避免秒闪。
-- **压在最上层**：卡片进程自己声明 `HWND_TOPMOST`，跟其他置顶窗口抢顶时可能被挤到后面，属正常现象。
+- **不抢焦点。** 卡片出现的时候，焦点还是留在你原来那个窗口。打字、放视频都不受影响。
+- **独占全屏的游戏先等 2 秒。** 只有真正的独占全屏（D3D 全屏游戏、演示模式）才会等。在那种画面上画普通窗口，Windows 会切换显示模式，屏幕黑一下再回来，大约 0.7 秒。所以卡片先等 2 秒：游戏正好在关，或者你 alt-tab 出来，它就正常弹出；2 秒后还占着全屏就照画，宁可闪一下也不丢提示。无边框全屏播放器和 F11 浏览器不算独占，卡片直接盖上去，不会黑屏。
+- **任务结束卡自己消失。** 停留 `seconds` 秒后淡出，不点也会消失。
+- **审批卡和提问卡不会自己消失。** 请求有可能在你根本没看到卡片的时候就被答掉了：回合被中止、审批策略设成自动拒绝、或者远程客户端替你答了。如果卡片也跟着消失，你会以为对话卡住了。所以这种卡要同时满足两件事才淡出：请求已经答完，并且 DSH 窗口在这前后出现在过最前面。最少显示 1.2 秒，不会闪一下就没了。
+- **点 ✕ 立即收起。** 点窗口图标则把 DSH 窗口切到前台。
+- **压在最上层。** 卡片会把自己固定在最上层。跟别的置顶窗口抢顶层时可能被挤到后面，这是正常的。
 
 ## 卸载
 
-1. 把 `cordis.patch.yml` 里那段 `- insert:` 删掉（方式一/二/四），或在 设置 → 插件 里卸载（方式三）
-2. 删掉缓存：`%LOCALAPPDATA%\dsh-notice-card\`
-3. 方式一可以连带删掉 `node_modules/dsh-notice-card`，方式二可以连带删掉克隆目录
+1. 把 `cordis.patch.yml` 里那段 `- insert:` 删掉（方式一、二、四），或者在 设置 → 插件 里卸载（方式三）
+2. 删掉缓存目录 `%LOCALAPPDATA%\dsh-notice-card\`
+3. 方式一可以顺带删掉 `node_modules/dsh-notice-card`，方式二可以顺带删掉克隆出来的目录
 
-## 工作原理
+## 一次事件一张卡
+
+卡片会同时收到三种事件：
 
 ```
-一轮结束        → agent/turn-stopping  → 写一个请求文件 ┐
-等你审批        → approval/request (prepend)             ├→ WinForms 无边框窗口，GDI+ 手绘
-等你回答        → user-questions/request (prepend)       ┘
+一轮结束   → agent/turn-stopping
+等你审批   → approval/request
+等你回答   → user-questions/request
 ```
 
-审批与提问这两个监听器**只是旁听**：它们用 `{ prepend: true }` 挂在瀑布流最前面，弹完卡立刻 `return next()` 把请求交回给原本的应答方（应用内的审批面板）。插件永远不代替你回答，也永远不阻塞请求——`notify()` 全程包在 `try/catch` 里，弹卡失败只会静默吞掉。
+审批和提问这两个监听器只是旁听。它们挂在最前面，弹完卡立刻调用 `next()` 把请求交回给原本的应答方（应用里的审批面板）。插件不代替你回答，也不阻塞请求。弹卡失败只会被静默吞掉，不会影响 DSH。
 
-### 一卡一进程
+每张卡都是一个独立的 `card-<一串编号>.exe` 进程。没有常驻后台进程，没有共享队列，也没有请求文件。卡片上屏大约 60ms。一张卡崩了只崩它自己，下一张从干净的进程重新开始。
 
-每张卡都是一个独立的 `card-<哈希>.exe` 进程，没有常驻助手、没有共享队列、没有请求文件。卡片上屏约 60ms（PowerShell 版本约 650ms，慢在解释器解析与 `Add-Type`），崩了只崩它自己，下一张从干净的进程重新开始。
+exe 只在 `card.cs` 改动时重新编译，所以平时弹卡不用等编译。编译结果放在 `%LOCALAPPDATA%\dsh-notice-card\`，卸载时整个删掉就行。
 
-exe 只在 `card.cs` 变化时重编译（哈希进文件名），所以平时弹卡不付编译的代价。编译产物缓存在 `%LOCALAPPDATA%\dsh-notice-card\`，卸载时整个删掉即可。
+卡片会在这些时候自己退出：`seconds` 到点、被你点掉、所属请求被答掉、或者 DSH 进程关了。
 
-卡片自己退出：`seconds` 到点、被点掉、所属请求被答掉，或宿主 DSH 进程消失。
-
-### `card.cs` 也能单独跑
+### 单独试一下卡片
 
 ```powershell
-& "$env:LOCALAPPDATA\dsh-notice-card\card-<哈希>.exe" --title "标题" --body "正文" --seconds 8
+& "$env:LOCALAPPDATA\dsh-notice-card\card-<一串编号>.exe" --title "标题" --body "正文" --seconds 8
 ```
 
 ## 常见问题
 
-**卡片不弹？**
+**卡片不弹**
 
-1. 先确认卡片本身没问题：上面的命令行直接跑一次，能弹就是插件没挂上
-2. 插件没挂上：确认 `cordis.patch.yml` 里 `name:` 指向的路径确实存在，且是 `lib/index.mjs`
-3. 改了 patch 但没反应：DSH 的补丁热重载只对**新增的 `id`** 生效；改一个已存在的 `id` 的内容不会重载，完全退出 DSH 再开
-4. 每次只弹一张、后来的不弹：检查是不是同时用两种方式挂载了两次
+1. 先用上面那条命令单独跑一次卡片。能弹，说明卡片没问题，是插件没挂上
+2. 检查 `cordis.patch.yml` 里 `name:` 指向的路径是否真的存在，结尾是不是 `lib/index.mjs`
+3. 改了 patch 但没反应：DSH 只对**新增的 `id`** 热加载。改一个已有的 `id` 不会重新加载，完全退出 DSH 再打开
+4. 每次只弹一张、后面的不弹：检查是不是用两种方式挂了两次
 
-**中文变成乱码？**
+**中文变成乱码**
 
-`lib/card.cs` 是 UTF-8 无 BOM 源码，按字面量编译；乱码通常是编辑器把它按 GBK 读又按 UTF-8 存回去，把中文压坏了。用 VS Code 或「UTF-8 without BOM」重新打开即可。
+`lib/card.cs` 是 UTF-8 无 BOM 的源码，编译时按文件里的字面量来。乱码一般是编辑器先按 GBK 读、又按 UTF-8 存回去，把中文压坏了。用 VS Code 以「UTF-8 without BOM」重新打开保存即可。
 
-**想改卡片的样式？**
+**想改卡片的样子**
 
-`lib/card.cs` 里是全部绘制逻辑（颜色、字号、圆角、动画时长、叠放间距都在文件顶部的常量与 `Card` 类里）。改完不用重新装插件：`card.cs` 的哈希变了会自动重编译，DSH 下次弹卡就是新样式。
+颜色、字号、圆角、动画时长、叠放间距，都在 `lib/card.cs` 里。改完不用重装插件：文件内容一改，下次弹卡就会自动重新编译。
 
 ## 隐私
 
 - 不发任何网络请求，不写任何统计
 - 不收集你的路径、用户名、会话内容
-- 与 DSH 的唯一交互就是上面那三个事件，卡片上显示的只有事件自带的工具名/问题文本
-- 卡片的 C# 编译产物缓存在 `%LOCALAPPDATA%\dsh-notice-card\`，卸载时删掉即可
+- 跟 DSH 的交互只有上面三个事件。卡片上显示的只有事件自带的工具名和问题文本
+- 编译出来的 exe 放在 `%LOCALAPPDATA%\dsh-notice-card\`，卸载时删掉即可
 
 ## 反馈
 
-**遇到问题或有建议，请到 [Issues](https://github.com/Maple-Yoli/dsh-notice-card/issues)** —— 卡片不弹、动画卡顿、位置不对、想要新功能，都发在那里。
-
-提问时附上：Windows 版本、DSH 版本、卡片类型（任务结束 / 审批 / 提问）、复现步骤。带截图或录屏最好。
+**遇到问题或有建议，请到 [Issues](https://github.com/Maple-Yoli/dsh-notice-card/issues)**。提的时候附上：Windows 版本、DSH 版本、是哪种卡片（任务结束 / 审批 / 提问）、复现步骤。有截图或录屏最好。
 
 > 插件不发任何请求，也没有内置反馈入口。作者看不到你的使用情况，只能靠你主动说。
 
@@ -207,12 +214,16 @@ exe 只在 `card.cs` 变化时重编译（哈希进文件名），所以平时�
 
 ## English
 
-A focus-free notice card for DeepSeek Harness on Windows. It slides into the bottom-right corner when a turn finishes, when DSH is waiting for a tool approval, or when it is waiting for an answer to a question. Cards stack, oldest one front and fully visible.
+A notice card for DeepSeek Harness on Windows.
 
-Pure host plugin: `agent/turn-stopping`, `approval/request` and `user-questions/request` → a detached C# executable compiled on first use draws a borderless WinForms window with GDI+. No notification-center permission, no network, no telemetry. The approval/question listeners only observe and delegate with `next()` — the built-in UI still answers.
+A card appears in the bottom-right corner when a turn finishes, when DSH waits for a tool approval, or when it waits for an answer to a question. A card is always on top but never takes focus, so you can keep typing. When several events arrive together the cards stack: the oldest one sits in front and fully visible, the rest show only their title.
 
-Cards stay out of the way while a game holds the display in true exclusive fullscreen (D3D or presentation mode), because drawing one there forces the display mode to switch and the screen blinks black. Such a card waits at most two seconds and is then drawn anyway — a blink beats a lost notice. Borderless fullscreen videos and F11 browsers report `QUNS_BUSY`, where the compositor is still running, so cards cover them directly. A turn-end card lives for `seconds` and then leaves on its own, with a three-second backstop past that. An approval or question card has no timeout at all: it needs both the request answered *and* DSH to have been in front of you while the card was up, because a request can be settled with nobody at the desk — a stopped turn, an auto-deny policy, a remote front end. Expiring unseen is exactly the notice that leaves a conversation waiting, so it does not expire.
+The plugin listens to three DSH events (`agent/turn-stopping`, `approval/request`, `user-questions/request`) and starts a separate process that draws a borderless window. The approval and question listeners only observe, then call `next()` so the built-in panel still answers the request. No notification-center permission, no network, no telemetry.
 
-Requires Windows, Node >= 20, and the .NET Framework that ships with Windows (`csc.exe` compiles the card once on first use; PowerShell 7 is not needed). Install with `npm i dsh-notice-card@0.1.7` and add an insert to your profile's `cordis.patch.yml` pointing `name:` at the absolute path of `node_modules/dsh-notice-card/lib/index.mjs` (or clone the repo at tag `v0.1.7` and point at `lib/index.mjs`); on the official Electron desktop app, install it from **Settings → Plugins** instead. See the Chinese section above for the full config table.
+A turn-end card closes itself after `seconds`. An approval or question card has no timeout: it closes only after the request is answered and the DSH window has been in front of you around that time. A request can be settled while nobody is at the desk (a stopped turn, an auto-deny policy, a remote client), and a card that expires unseen is a notice you never got.
 
-**Found a bug or have a suggestion?** Open an issue at [github.com/Maple-Yoli/dsh-notice-card/issues](https://github.com/Maple-Yoli/dsh-notice-card/issues). Include your Windows version, DSH version, card type (turn end / approval / question) and the steps to reproduce. The plugin sends no requests and has no built-in feedback channel, so issues are the only way to reach the author.
+While a game runs in true exclusive fullscreen a card waits up to two seconds before it draws, because a normal window there makes Windows switch display mode and the screen goes black for a moment. Borderless fullscreen video and F11 browsers are not affected; cards cover them directly.
+
+Requires Windows, Node 20 or newer, and the .NET Framework that ships with Windows. `csc.exe` compiles the card once on first use. Install with `npm i dsh-notice-card@0.1.7`, then point `name:` in your profile's `cordis.patch.yml` at the full path of `node_modules/dsh-notice-card/lib/index.mjs`. Or clone tag `v0.1.7` and point at `lib/index.mjs`. On the official Electron desktop app, use **Settings → Plugins** instead. The config table is in the Chinese section above.
+
+**Found a bug or have a suggestion?** Open an issue at [github.com/Maple-Yoli/dsh-notice-card/issues](https://github.com/Maple-Yoli/dsh-notice-card/issues). Please include your Windows version, DSH version, which card it was (turn end / approval / question) and the steps to reproduce. The plugin sends no requests and has no built-in feedback channel, so issues are the only way to reach the author.
