@@ -1,6 +1,29 @@
+<div align="center">
+
 # Notice Card
 
-给 DeepSeek Harness 用的通知卡，只支持 Windows。
+给 DeepSeek Harness 的通知卡。任务跑完、等你审批、等你回答的时候，在屏幕右下角弹一张卡片提醒你。
+
+[![npm version](https://img.shields.io/npm/v/dsh-notice-card?color=2ea043)](https://www.npmjs.com/package/dsh-notice-card)
+[![npm downloads](https://img.shields.io/npm/dm/dsh-notice-card?color=2ea043)](https://www.npmjs.com/package/dsh-notice-card)
+[![license](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
+[![platform](https://img.shields.io/badge/platform-Windows-blue)](#requirements)
+
+**简体中文** · [English](https://github.com/Maple-Yoli/dsh-notice-card/blob/main/README.en.md)
+
+[功能](#features) · [安装](#install) · [配置](#config) · [常见问题](#faq)
+
+</div>
+
+![卡片叠放示例](assets/card-deck.png)
+
+![出现与消失动画](assets/card-animation.gif)
+
+> 遇到问题或有建议，写到 [Issues](https://github.com/Maple-Yoli/dsh-notice-card/issues)。每个版本改了什么，写在 [Releases](https://github.com/Maple-Yoli/dsh-notice-card/releases)，中文和英文都有。
+
+<a id="features"></a>
+
+## 功能
 
 下面三件事发生时，屏幕右下角会出现一张卡片：
 
@@ -12,17 +35,11 @@
 
 同时来了好几个事件，卡片会叠成一摞。最早出现的那张在最前面、完整显示，后面的只露出标题。
 
-> **遇到问题或有建议**：写到 [Issues](https://github.com/Maple-Yoli/dsh-notice-card/issues)。卡片不弹、动画卡顿、位置不对、想要新功能，都发在那里。
->
-> **每个版本改了什么**：写在 [Releases](https://github.com/Maple-Yoli/dsh-notice-card/releases)，中文和英文都有。
-
-![卡片叠放示例](assets/card-deck.png)
-
-![出现与消失动画](assets/card-animation.gif)
-
 - 卡片自己画窗口，不用 Windows 通知中心，也不用开系统通知权限
 - 卡片是独立进程。DSH 忙着的时候照弹，卡片崩了也不影响 DSH
 - 不发任何网络请求，不收集任何数据
+
+<a id="requirements"></a>
 
 ## 环境要求
 
@@ -34,6 +51,8 @@
 | .NET Framework | 4.x，Windows 自带，不用另外装 |
 
 卡片的界面是一段 C# 代码，放在 `lib/card.cs`。第一次弹卡时，插件用系统自带的 `csc.exe` 把它编译成一个 exe，存到 `%LOCALAPPDATA%\dsh-notice-card\`，以后直接复用。仓库里没有编译好的文件，也不会下载任何东西。
+
+<a id="install"></a>
 
 ## 安装
 
@@ -107,6 +126,8 @@ DSH 会读到你包里的 `dsh.bundle.patch`，自动把它加进 profile 的 `d
 
 > 同时用两种方式挂载，同一个插件会被加载两次，每件事会弹两张卡。
 
+<a id="config"></a>
+
 ## 配置
 
 配置写在 patch 的 `config:` 里。比如只关掉「任务结束」的提示：
@@ -179,6 +200,8 @@ $card = (Get-ChildItem "$env:LOCALAPPDATA\dsh-notice-card\card-*.exe" | Select-O
 
 前提是 `%LOCALAPPDATA%\dsh-notice-card\` 里已经有一个 `card-*.exe`。没有的话，让它编译一次就行：随便跑一轮 DSH 任务。
 
+<a id="faq"></a>
+
 ## 常见问题
 
 **卡片不弹**
@@ -212,21 +235,3 @@ $card = (Get-ChildItem "$env:LOCALAPPDATA\dsh-notice-card\card-*.exe" | Select-O
 ## License
 
 [MIT](LICENSE)
-
----
-
-## English
-
-A notice card for DeepSeek Harness on Windows.
-
-A card appears in the bottom-right corner when a turn finishes, when DSH waits for a tool approval, or when it waits for an answer to a question. A card is always on top but never takes focus, so you can keep typing. When several events arrive together the cards stack: the oldest one sits in front and fully visible, the rest show only their title.
-
-The plugin listens to three DSH events (`agent/turn-stopping`, `approval/request`, `user-questions/request`) and starts a separate process that draws a borderless window. The approval and question listeners only observe, then call `next()` so the built-in panel still answers the request. No notification-center permission, no network, no telemetry.
-
-A turn-end card closes itself after `seconds`. An approval or question card has no timeout: it closes only after the request is answered and the DSH window has been in front of you around that time. A request can be settled while nobody is at the desk (a stopped turn, an auto-deny policy, a remote client), and a card that expires unseen is a notice you never got.
-
-While a game runs in true exclusive fullscreen a card waits up to two seconds before it draws, because a normal window there makes Windows switch display mode and the screen goes black for a moment. Borderless fullscreen video and F11 browsers are not affected; cards cover them directly.
-
-Requires Windows, Node 20 or newer, and the .NET Framework that ships with Windows. `csc.exe` compiles the card once on first use. Install with `npm i dsh-notice-card@0.1.7`, then point `name:` in your profile's `cordis.patch.yml` at the full path of `node_modules/dsh-notice-card/lib/index.mjs`. Or clone tag `v0.1.7` and point at `lib/index.mjs`. On the official Electron desktop app, use **Settings → Plugins** instead. The config table is in the Chinese section above.
-
-**Found a bug or have a suggestion?** Open an issue at [github.com/Maple-Yoli/dsh-notice-card/issues](https://github.com/Maple-Yoli/dsh-notice-card/issues). Please include your Windows version, DSH version, which card it was (turn end / approval / question) and the steps to reproduce. The plugin sends no requests and has no built-in feedback channel, so issues are the only way to reach the author.
