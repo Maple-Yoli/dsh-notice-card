@@ -11,7 +11,7 @@ Notification cards for DeepSeek Harness. When a turn finishes, when DSH waits fo
 
 [简体中文](https://github.com/Maple-Yoli/dsh-notice-card/blob/main/README.md) · **English**
 
-[Features](#features) · [Install](#install) · [Config](#config) · [FAQ](#faq)
+[Feedback](#feedback) · [Changelog](#changelog) · [Features](#features) · [Install](#install) · [Config](#config) · [FAQ](#faq)
 
 </div>
 
@@ -19,7 +19,23 @@ Notification cards for DeepSeek Harness. When a turn finishes, when DSH waits fo
 
 ![Appear and disappear animation](assets/card-animation.gif)
 
-> Found a problem or have a suggestion? Write it in [Issues](https://github.com/Maple-Yoli/dsh-notice-card/issues). What changed in each version is in [Releases](https://github.com/Maple-Yoli/dsh-notice-card/releases), in both Chinese and English.
+<a id="feedback"></a>
+
+## Feedback: report a bug or suggest something
+
+**Found a bug or have an idea? Open an issue at [Issues](https://github.com/Maple-Yoli/dsh-notice-card/issues).**
+
+Please include your Windows version, DSH version, which card it was (turn end / approval / question) and the steps to reproduce. A screenshot or recording helps most.
+
+The plugin sends no requests and has no built-in feedback channel. The author cannot see how you use it, so issues are the only way to reach the author. Don't stay quiet if something looks wrong.
+
+<a id="changelog"></a>
+
+## Changelog: what changed in each version
+
+**Everything is in [Releases](https://github.com/Maple-Yoli/dsh-notice-card/releases), in both Chinese and English.**
+
+Check it before you install or upgrade, so you know what this version changed and fixed.
 
 <a id="features"></a>
 
@@ -225,12 +241,6 @@ Colors, font sizes, corner radius, animation length and stacking gap are all in 
 - No collection of your paths, user name or conversation content
 - The only interaction with DSH is the three events above. A card shows only the tool name and question text those events carry
 - The compiled exe lives in `%LOCALAPPDATA%\dsh-notice-card\`; delete it on uninstall
-
-## Feedback
-
-**Found a bug or have a suggestion? Open an issue at [Issues](https://github.com/Maple-Yoli/dsh-notice-card/issues)**. Please include your Windows version, DSH version, which card it was (turn end / approval / question) and the steps to reproduce. A screenshot or recording helps most.
-
-> The plugin sends no requests and has no built-in feedback channel. The author cannot see how you use it, so issues are the only way to reach the author.
 
 ## License
 

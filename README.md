@@ -11,7 +11,7 @@
 
 **简体中文** · [English](https://github.com/Maple-Yoli/dsh-notice-card/blob/main/README.en.md)
 
-[功能](#features) · [安装](#install) · [配置](#config) · [常见问题](#faq)
+[反馈](#feedback) · [更新日志](#changelog) · [功能](#features) · [安装](#install) · [配置](#config) · [常见问题](#faq)
 
 </div>
 
@@ -19,7 +19,23 @@
 
 ![出现与消失动画](assets/card-animation.gif)
 
-> 遇到问题或有建议，写到 [Issues](https://github.com/Maple-Yoli/dsh-notice-card/issues)。每个版本改了什么，写在 [Releases](https://github.com/Maple-Yoli/dsh-notice-card/releases)，中文和英文都有。
+<a id="feedback"></a>
+
+## 反馈：遇到问题或有建议，写这里
+
+**有 Bug、有想法，请到 [Issues](https://github.com/Maple-Yoli/dsh-notice-card/issues) 提。**
+
+提的时候附上：Windows 版本、DSH 版本、是哪种卡片（任务结束 / 审批 / 提问）、复现步骤。有截图或录屏最好。
+
+插件不发任何请求，也没有内置反馈入口。作者看不到你的使用情况，只能靠你主动说，所以有问题别憋着。
+
+<a id="changelog"></a>
+
+## 更新日志：每个版本改了什么
+
+**全部写在 [Releases](https://github.com/Maple-Yoli/dsh-notice-card/releases) 里，中文和英文都有。**
+
+装之前可以先看那里，就知道这一版改了什么、修了什么。
 
 <a id="features"></a>
 
@@ -225,12 +241,6 @@ $card = (Get-ChildItem "$env:LOCALAPPDATA\dsh-notice-card\card-*.exe" | Select-O
 - 不收集你的路径、用户名、会话内容
 - 跟 DSH 的交互只有上面三个事件。卡片上显示的只有事件自带的工具名和问题文本
 - 编译出来的 exe 放在 `%LOCALAPPDATA%\dsh-notice-card\`，卸载时删掉即可
-
-## 反馈
-
-**遇到问题或有建议，请到 [Issues](https://github.com/Maple-Yoli/dsh-notice-card/issues)**。提的时候附上：Windows 版本、DSH 版本、是哪种卡片（任务结束 / 审批 / 提问）、复现步骤。有截图或录屏最好。
-
-> 插件不发任何请求，也没有内置反馈入口。作者看不到你的使用情况，只能靠你主动说。
 
 ## License
 
