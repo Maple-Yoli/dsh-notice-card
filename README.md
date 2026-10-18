@@ -164,7 +164,7 @@ DSH 会读到你包里的 `dsh.bundle.patch`，自动把它加进 profile 的 `d
 
 审批和提问这两个监听器只是旁听。它们挂在最前面，弹完卡立刻调用 `next()` 把请求交回给原本的应答方（应用里的审批面板）。插件不代替你回答，也不阻塞请求。弹卡失败只会被静默吞掉，不会影响 DSH。
 
-每张卡都是一个独立的 `card-<一串编号>.exe` 进程。没有常驻后台进程，没有共享队列，也没有请求文件。卡片上屏大约 60ms。一张卡崩了只崩它自己，下一张从干净的进程重新开始。
+每张卡都是一个独立的 `card-` 开头、后面跟一串编号的 exe 进程。没有常驻后台进程，没有共享队列，也没有请求文件。卡片上屏大约 60ms。一张卡崩了只崩它自己，下一张从干净的进程重新开始。
 
 exe 只在 `card.cs` 改动时重新编译，所以平时弹卡不用等编译。编译结果放在 `%LOCALAPPDATA%\dsh-notice-card\`，卸载时整个删掉就行。
 
@@ -173,8 +173,11 @@ exe 只在 `card.cs` 改动时重新编译，所以平时弹卡不用等编译�
 ### 单独试一下卡片
 
 ```powershell
-& "$env:LOCALAPPDATA\dsh-notice-card\card-<一串编号>.exe" --title "标题" --body "正文" --seconds 8
+$card = (Get-ChildItem "$env:LOCALAPPDATA\dsh-notice-card\card-*.exe" | Select-Object -First 1).FullName
+& $card --title "标题" --body "正文" --seconds 8
 ```
+
+前提是 `%LOCALAPPDATA%\dsh-notice-card\` 里已经有一个 `card-*.exe`。没有的话，让它编译一次就行：随便跑一轮 DSH 任务。
 
 ## 常见问题
 
