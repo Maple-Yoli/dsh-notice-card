@@ -27,8 +27,6 @@ Notification cards for DeepSeek Harness. When a turn finishes, when DSH waits fo
 
 Please include your Windows version, DSH version, which card it was (turn end / approval / question) and the steps to reproduce. A screenshot or recording helps most.
 
-The plugin sends no requests and has no built-in feedback channel. The author cannot see how you use it, so issues are the only way to reach the author. Don't stay quiet if something looks wrong.
-
 <a id="changelog"></a>
 
 ## Changelog: what changed in each version
