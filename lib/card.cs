@@ -55,7 +55,15 @@ static class Native
     [StructLayout(LayoutKind.Sequential)] struct RECT { public int L, T, R, B; }
 
     public const uint LWA_ALPHA = 0x2;
+    public const int WS_EX_TRANSPARENT = 0x00000020;
+    public const int WS_EX_TOOLWINDOW = 0x00000080;
+    public const int WS_EX_TOPMOST = 0x00000008;
+    public const int WS_EX_LAYERED = 0x00080000;
+    public const int WS_EX_NOACTIVATE = 0x08000000;
+    public const int GWL_EXSTYLE = -20;
     public const uint WM_CLOSE = 0x0010;
+    public const uint SWP_FRAMECHANGED = 0x0020;
+    public const uint SWP_NOZORDER = 0x0004;
     public const uint SWP_NOSIZE = 0x0001;
     public const uint SWP_NOMOVE = 0x0002;
     public const uint SWP_NOACTIVATE = 0x0010;
@@ -91,6 +99,15 @@ static class Native
         int state;
         if (SHQueryUserNotificationState(out state) != 0) return false;
         if (state != 3 && state != 4) return false;
+        return CoversScreen();
+    }
+
+    // Is something owning the whole screen right now? The card asks this to decide
+    // whether it may eat the mouse. A notice drawn over a full-screen app is the
+    // one case where the rectangle it covers is a rectangle the app below can no
+    // longer receive the cursor in, and that reads as a dead patch on the screen.
+    public static bool FullScreenForeground()
+    {
         return CoversScreen();
     }
 
@@ -335,6 +352,9 @@ sealed class Card : Form
     int ownerTick;
     Stopwatch clock;
     const long SeenGraceMs = 3000;
+
+    // A card over a full-screen app must not take the mouse. See ApplyClickThrough.
+    bool clickThrough;
 
     public Card(Options options)
     {
@@ -586,9 +606,47 @@ sealed class Card : Form
         return (int)Math.Max(slotTop, slotBase - index * slotOffset);
     }
 
+    // A card over a full-screen app must not be a mouse trap. The rectangle it
+    // covers is a rectangle the app below can no longer receive the cursor in,
+    // and over a video that reads as a dead patch in the corner. WS_EX_TRANSPARENT
+    // makes hit-testing skip this window entirely, so the cursor and every click
+    // go straight to the app underneath.
+    //
+    // Only while something owns the whole screen. On a normal desktop there is no
+    // conflict, and there the card stays clickable so it can be closed or
+    // scrolled. Checked from the reflow tick as well, because the foreground app
+    // can change while the card is up.
+    void ApplyClickThrough()
+    {
+        bool want = Native.FullScreenForeground();
+        if (want == clickThrough) return;
+        clickThrough = want;
+        int ex = Native.GetWindowLong(Handle, Native.GWL_EXSTYLE);
+        ex &= ~Native.WS_EX_TOOLWINDOW;
+        ex |= Native.WS_EX_NOACTIVATE;
+        if (want)
+        {
+            // Hit-testing only skips a transparent window when it is layered as
+            // well; WS_EX_TRANSPARENT on its own is a painting hint, not a mouse
+            // one. The alpha is set explicitly because a layered window without
+            // attributes is invisible.
+            ex |= Native.WS_EX_LAYERED | Native.WS_EX_TRANSPARENT;
+            Native.SetWindowLong(Handle, Native.GWL_EXSTYLE, ex);
+            Native.SetLayeredWindowAttributes(Handle, 0, 255, Native.LWA_ALPHA);
+        }
+        else
+        {
+            ex &= ~Native.WS_EX_TRANSPARENT;
+            Native.SetWindowLong(Handle, Native.GWL_EXSTYLE, ex);
+            // Leave the card opaque: Opacity takes it from here.
+            Native.SetLayeredWindowAttributes(Handle, 0, 255, Native.LWA_ALPHA);
+        }
+    }
+
     void Reflow()
     {
         if (!settled) return;
+        ApplyClickThrough();
         int y = SlotY();
         if (Location.Y != y) Location = new Point(targetX, y);
         // Z-order is not raised from here - a raise is a one-shot event and the

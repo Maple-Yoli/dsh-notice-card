@@ -179,6 +179,7 @@ Configuration goes in the patch's `config:`. For example, to turn off only the "
 - **The turn-end card closes itself.** It fades out after `seconds`, with no click needed.
 - **Approval and question cards never expire on their own.** A request can be settled while you never saw the card: a stopped turn, an approval policy set to auto-deny, or a remote client answering for you. If the card disappeared too, you would think the conversation was stuck. So this kind of card fades out only when both things are true: the request has been answered, and the DSH window has been in front of you around that moment. Minimum display is 1.2 seconds, so it never flashes away.
 - **Click ✕ to dismiss immediately.** Click the window icon to bring the DSH window to the front.
+- **Over fullscreen it does not block the mouse.** While a fullscreen window is up (video, game, fullscreen browser), the card becomes click-through: you still see it, but the cursor and every click land on the window underneath, so no dead patch forms in the corner. Leave fullscreen and the card becomes clickable again, ✕ included.
 - **Always on top.** The card pins itself to the top. When competing with another always-on-top window it may be pushed behind; that is normal.
 
 ## Uninstall
