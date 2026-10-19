@@ -6,3 +6,6 @@ Thumbs.db
 
 # local capture/scratch screenshots, not part of the published package
 预览图-previews/
+
+# engineering notes for this machine only: never committed, never published
+memory/
