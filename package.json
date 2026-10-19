@@ -1,7 +1,7 @@
 {
   "name": "dsh-notice-card",
   "version": "0.2.1",
-  "description": "在屏幕角落弹出通知卡：任务跑完、等你审批、等你回答的时候提醒你一下。跟随系统深浅色与 DPI，卡片落在鼠标所在那块屏幕，不抢焦点。A notice card for DeepSeek Harness on Windows: it appears in a corner of the monitor under your pointer when a turn ends, or when DSH is waiting for an approval or an answer. Follows the system theme and DPI, and never takes focus.",
+  "description": "在屏幕角落弹出通知卡：任务跑完、等你审批、等你回答的时候提醒你一下。跟随系统深浅色与 DPI，落在鼠标那块屏幕，文字用 GDI ClearType 绘制，不抢焦点。A notice card for DeepSeek Harness on Windows: it appears in a corner of the monitor under your pointer when a turn ends, or when DSH is waiting for an approval or an answer. Follows the system theme and DPI, draws text with GDI ClearType, and never takes focus.",
   "type": "module",
   "main": "lib/index.mjs",
   "exports": {
@@ -29,7 +29,7 @@
   "dshhub": {
     "schemaVersion": 1,
     "displayName": "Notice Card",
-    "summary": "任务跑完、等你审批、等你回答的时候，在屏幕角落弹一张卡提醒你。跟随系统主题与缩放，不抢焦点。",
+    "summary": "任务跑完、等你审批、等你回答的时候，在屏幕角落弹一张卡提醒你。跟随系统主题、DPI 与文本大小，落在鼠标那块屏幕，不抢焦点。",
     "categories": [
       "通知",
       "桌面"
