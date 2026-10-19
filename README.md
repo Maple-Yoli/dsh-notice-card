@@ -75,7 +75,7 @@
 ### 方式一：从 npm 装
 
 ```bash
-npm i dsh-notice-card@0.1.7
+npm i dsh-notice-card@0.1.8
 ```
 
 装完之后，打开你的 profile 目录下的 `cordis.patch.yml`（默认在 `%USERPROFILE%\.dsh\profiles\<你的 profile 名>\`），在文件最后加上：
@@ -96,7 +96,7 @@ npm i dsh-notice-card@0.1.7
 想改代码就用这种。
 
 ```bash
-git clone --branch v0.1.7 https://github.com/Maple-Yoli/dsh-notice-card.git
+git clone --branch v0.1.8 https://github.com/Maple-Yoli/dsh-notice-card.git
 ```
 
 然后在 profile 的 `cordis.patch.yml` 最后加上：
@@ -127,13 +127,13 @@ Maple-Yoli/dsh-notice-card
 这些 profile 允许用命令行装插件。
 
 ```bash
-dsh plugin --profile web add dsh-notice-card@0.1.7
+dsh plugin --profile web add dsh-notice-card@0.1.8
 ```
 
 也可以直接用 GitHub 源，不走 npm：
 
 ```bash
-dsh plugin --profile web add github:Maple-Yoli/dsh-notice-card#v0.1.7
+dsh plugin --profile web add github:Maple-Yoli/dsh-notice-card#v0.1.8
 ```
 
 DSH 会读到你包里的 `dsh.bundle.patch`，自动把它加进 profile 的 `dsh.profile.bundles`。
@@ -221,14 +221,14 @@ $card = (Get-ChildItem "$env:LOCALAPPDATA\dsh-notice-card\card-*.exe" | Select-O
 
 **卡片不弹**
 
-1. 先用上面那条命令单独跑一次卡片。能弹，说明卡片没问题，是插件没挂上
+1. 先用上面那条命令单独跑一次卡片。能弹，就说明卡片本身是好的，问题在插件没挂上
 2. 检查 `cordis.patch.yml` 里 `name:` 指向的路径是否真的存在，结尾是不是 `lib/index.mjs`
 3. 改了 patch 但没反应：DSH 只对**新增的 `id`** 热加载。改一个已有的 `id` 不会重新加载，完全退出 DSH 再打开
 4. 每次只弹一张、后面的不弹：检查是不是用两种方式挂了两次
 
 **中文变成乱码**
 
-`lib/card.cs` 是 UTF-8 无 BOM 的源码，编译时按文件里的字面量来。乱码一般是编辑器先按 GBK 读、又按 UTF-8 存回去，把中文压坏了。用 VS Code 以「UTF-8 without BOM」重新打开保存即可。
+`lib/card.cs` 是 UTF-8 无 BOM 的源码，编译时按文件里的字面量来。乱码一般是编辑器先按 GBK 读、又按 UTF-8 存回去，把中文压坏了。用 VS Code 以「UTF-8 without BOM」重新打开、保存，文件就恢复正常。
 
 **想改卡片的样子**
 
@@ -239,7 +239,7 @@ $card = (Get-ChildItem "$env:LOCALAPPDATA\dsh-notice-card\card-*.exe" | Select-O
 - 不发任何网络请求，不写任何统计
 - 不收集你的路径、用户名、会话内容
 - 跟 DSH 的交互只有上面三个事件。卡片上显示的只有事件自带的工具名和问题文本
-- 编译出来的 exe 放在 `%LOCALAPPDATA%\dsh-notice-card\`，卸载时删掉即可
+- 编译出来的 exe 放在 `%LOCALAPPDATA%\dsh-notice-card\`，卸载时一起删掉
 
 ## License
 

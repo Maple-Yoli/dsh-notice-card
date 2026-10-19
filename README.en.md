@@ -25,7 +25,7 @@ Notification cards for DeepSeek Harness. When a turn finishes, when DSH waits fo
 
 **Found a bug or have an idea? Open an issue at [Issues](https://github.com/Maple-Yoli/dsh-notice-card/issues).**
 
-Please include your Windows version, DSH version, which card it was (turn end / approval / question) and the steps to reproduce. A screenshot or recording helps most.
+Please include your Windows version, DSH version, which card it was (turn end / approval / question) and the steps to reproduce. A screenshot or recording is the fastest way to figure it out.
 
 <a id="changelog"></a>
 
@@ -64,7 +64,7 @@ When several events arrive together the cards stack. The oldest one sits in fron
 | Node | 20 or newer (only used when DSH loads the plugin) |
 | .NET Framework | 4.x, ships with Windows, nothing to install |
 
-The card's interface is a piece of C# code in `lib/card.cs`. On the first card, the plugin compiles it into an exe with the `csc.exe` that ships with Windows and stores it in `%LOCALAPPDATA%\dsh-notice-card\`, then reuses it. The repository contains no prebuilt file and nothing is ever downloaded.
+The card's interface is a piece of C# code in `lib/card.cs`. On the first card, the plugin compiles it into an exe with the `csc.exe` that ships with Windows and stores it in `%LOCALAPPDATA%\dsh-notice-card\`, then reuses it. The repository holds no prebuilt file, and nothing is downloaded at runtime.
 
 <a id="install"></a>
 
@@ -75,7 +75,7 @@ There are four ways. Pick the one that matches your DSH setup; do not use two at
 ### Option 1: from npm
 
 ```bash
-npm i dsh-notice-card@0.1.7
+npm i dsh-notice-card@0.1.8
 ```
 
 Then open `cordis.patch.yml` in your profile directory (by default `%USERPROFILE%\.dsh\profiles\<your profile name>\`) and add this at the end of the file:
@@ -96,7 +96,7 @@ Then open `cordis.patch.yml` in your profile directory (by default `%USERPROFILE
 Use this one if you want to change the code.
 
 ```bash
-git clone --branch v0.1.7 https://github.com/Maple-Yoli/dsh-notice-card.git
+git clone --branch v0.1.8 https://github.com/Maple-Yoli/dsh-notice-card.git
 ```
 
 Then add this at the end of your profile's `cordis.patch.yml`:
@@ -127,16 +127,16 @@ The plugin is mounted automatically afterwards; you do not edit the patch file.
 These profiles accept command-line plugin installs.
 
 ```bash
-dsh plugin --profile web add dsh-notice-card@0.1.7
+dsh plugin --profile web add dsh-notice-card@0.1.8
 ```
 
 You can also use the GitHub source instead of npm:
 
 ```bash
-dsh plugin --profile web add github:Maple-Yoli/dsh-notice-card#v0.1.7
+dsh plugin --profile web add github:Maple-Yoli/dsh-notice-card#v0.1.8
 ```
 
-DSH reads the `dsh.bundle.patch` field from the package and adds it to the profile's `dsh.profile.bundles` by itself.
+DSH reads the `dsh.bundle.patch` field from the package and adds it to the profile's `dsh.profile.bundles`, so you do not edit that file.
 
 > If you mount the plugin two ways at once, it is loaded twice and every event draws two cards.
 
@@ -175,12 +175,12 @@ Configuration goes in the patch's `config:`. For example, to turn off only the "
 ## How a card works
 
 - **It never takes focus.** When a card appears, focus stays in the window you were already using. Typing and video playback are unaffected.
-- **A true exclusive-fullscreen game makes it wait 2 seconds.** Only real exclusive fullscreen (a D3D-fullscreen game, presentation mode) triggers the wait. Drawing a normal window over such a surface makes Windows switch display mode and the screen goes black for a moment, about 0.7 seconds. So the card waits up to 2 seconds: if the game is closing or you alt-tab out, it appears normally; if fullscreen is still held after 2 seconds it draws anyway, preferring a brief flash over a missed notice. Borderless fullscreen video players and F11 browsers are not exclusive, so cards cover them directly with no black screen.
+- **A true exclusive-fullscreen game makes it wait 2 seconds.** Only real exclusive fullscreen (a D3D-fullscreen game, presentation mode) triggers the wait. Drawing a normal window over such a surface makes Windows switch display mode and the screen goes black for a moment, about 0.7 seconds. So the card waits up to 2 seconds: if the game is closing or you alt-tab out, it appears normally; if fullscreen is still held after 2 seconds it draws regardless, accepting a brief flash rather than a missed notice. Borderless fullscreen video players and F11 browsers are not exclusive, so cards cover them directly with no black screen.
 - **The turn-end card closes itself.** It fades out after `seconds`, with no click needed.
 - **Approval and question cards never expire on their own.** A request can be settled while you never saw the card: a stopped turn, an approval policy set to auto-deny, or a remote client answering for you. If the card disappeared too, you would think the conversation was stuck. So this kind of card fades out only when both things are true: the request has been answered, and the DSH window has been in front of you around that moment. Minimum display is 1.2 seconds, so it never flashes away.
 - **Click ✕ to dismiss immediately.** Click the window icon to bring the DSH window to the front.
 - **Over fullscreen it does not block the mouse.** While a fullscreen window is up (video, game, fullscreen browser), the card becomes click-through: you still see it, but the cursor and every click land on the window underneath, so no dead patch forms in the corner. Leave fullscreen and the card becomes clickable again, ✕ included.
-- **Always on top.** The card pins itself to the top. When competing with another always-on-top window it may be pushed behind; that is normal.
+- **Always on top.** The card pins itself to the top. When another always-on-top window competes with it, Windows may put the card behind.
 
 ## Uninstall
 
@@ -198,13 +198,13 @@ waiting approval → approval/request
 waiting answer   → user-questions/request
 ```
 
-The approval and question listeners only observe. They sit at the front, draw the card, and immediately call `next()` to hand the request back to whoever would answer it anyway (the approval panel in the app). The plugin never answers for you and never blocks the request. A failure to draw is silently swallowed and cannot affect DSH.
+The approval and question listeners only observe. They sit at the front, draw the card, and immediately call `next()` to hand the request back to the approval panel in the app, which answers it as usual. The plugin never answers for you and never blocks the request. A failure to draw is silently swallowed and cannot affect DSH.
 
 Every card is its own `card-`-prefixed exe process with a number after it. There is no resident background process, no shared queue and no request files. A card reaches the screen in about 60ms. A card that crashes takes only itself down; the next one starts from a clean process.
 
-The exe is recompiled only when `card.cs` changes, so drawing a card never waits for a compile. The build output lives in `%LOCALAPPDATA%\dsh-notice-card\` and can be deleted wholesale on uninstall.
+The exe is recompiled only when `card.cs` changes, so drawing a card never waits for a compile. The build output lives in `%LOCALAPPDATA%\dsh-notice-card\` and you can delete the whole thing on uninstall.
 
-A card exits by itself when `seconds` is up, when you click it away, when the request it belongs to is answered, or when the DSH process exits.
+A card exits on its own when `seconds` is up, when you click it away, when the request it belongs to is answered, or when the DSH process exits.
 
 ### Try a card on its own
 
@@ -213,7 +213,7 @@ $card = (Get-ChildItem "$env:LOCALAPPDATA\dsh-notice-card\card-*.exe" | Select-O
 & $card --title "Title" --body "Body" --seconds 8
 ```
 
-This requires a `card-*.exe` to already exist in `%LOCALAPPDATA%\dsh-notice-card\`. If there is none, let it compile once: just run one DSH turn.
+This requires a `card-*.exe` to already exist in `%LOCALAPPDATA%\dsh-notice-card\`. If there is none, run one DSH turn to trigger the first compile.
 
 <a id="faq"></a>
 
@@ -222,13 +222,13 @@ This requires a `card-*.exe` to already exist in `%LOCALAPPDATA%\dsh-notice-card
 **No card appears**
 
 1. Run the command above to draw a card on its own. If that works, the card is fine and the plugin is not mounted
-2. Check that the path in `cordis.patch.yml` `name:` really exists and ends in `lib/index.mjs`
+2. Check that the path in `cordis.patch.yml` `name:` exists and ends in `lib/index.mjs`
 3. You edited the patch and nothing happened: DSH hot-loads only **newly added `id`s**. Changing an existing `id` does not reload it; quit DSH completely and open it again
 4. Only one card appears and later ones do not: check whether you mounted the plugin two ways
 
 **Chinese text turns into garbage**
 
-`lib/card.cs` is UTF-8 source without a BOM, and the compiler takes literals from the file as they are. Garbage usually means an editor read the file as GBK and wrote it back as UTF-8, corrupting the Chinese. Reopen and save it in VS Code as "UTF-8 without BOM".
+`lib/card.cs` is UTF-8 source without a BOM, and the compiler takes literals from the file as they are. Garbage usually means an editor read the file as GBK and wrote it back as UTF-8, corrupting the Chinese. Reopen the file in VS Code, save it as "UTF-8 without BOM", and it is back to normal.
 
 **I want to change how the card looks**
 
@@ -239,7 +239,7 @@ Colors, font sizes, corner radius, animation length and stacking gap are all in 
 - No network requests, no statistics
 - No collection of your paths, user name or conversation content
 - The only interaction with DSH is the three events above. A card shows only the tool name and question text those events carry
-- The compiled exe lives in `%LOCALAPPDATA%\dsh-notice-card\`; delete it on uninstall
+- The compiled exe lives in `%LOCALAPPDATA%\dsh-notice-card\`, deleted along with it on uninstall
 
 ## License
 
