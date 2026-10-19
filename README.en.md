@@ -50,7 +50,7 @@ The card sits above other windows but never takes focus. You can keep typing, an
 
 - **Left** — the moment the card was raised, in your own short-time pattern (`2:35 PM` on a 12-hour region, `14:35` on a 24-hour one).
 - **Right** — the session name. A session with no generated title yet shows the first six characters of its id, which still tells two sessions apart. Right-to-left languages swap this end.
-- **Row below** — the session's current permission mode, the same name the app's permission dropdown shows. Display only: switching permission changes the sandbox mode and aborts the tool call that is running, so that switch stays in the app.
+- **Row below** — the session's current permission mode, the same name the app's permission dropdown shows, display only.
 
 ### Behaviour
 
