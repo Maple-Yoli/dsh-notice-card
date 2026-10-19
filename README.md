@@ -93,7 +93,7 @@
 ### 方式一：从 npm 装
 
 ```bash
-npm i dsh-notice-card@0.2.0
+npm i dsh-notice-card@0.2.1
 ```
 
 装完之后，打开你的 profile 目录下的 `cordis.patch.yml`（默认在 `%USERPROFILE%\.dsh\profiles\<你的 profile 名>\`），在文件最后加上：
@@ -114,7 +114,7 @@ npm i dsh-notice-card@0.2.0
 想改代码就用这种。
 
 ```bash
-git clone --branch v0.2.0 https://github.com/Maple-Yoli/dsh-notice-card.git
+git clone --branch v0.2.1 https://github.com/Maple-Yoli/dsh-notice-card.git
 ```
 
 然后在 profile 的 `cordis.patch.yml` 最后加上：
@@ -145,13 +145,13 @@ Maple-Yoli/dsh-notice-card
 这些 profile 允许用命令行装插件。
 
 ```bash
-dsh plugin --profile web add dsh-notice-card@0.2.0
+dsh plugin --profile web add dsh-notice-card@0.2.1
 ```
 
 也可以直接用 GitHub 源，不走 npm：
 
 ```bash
-dsh plugin --profile web add github:Maple-Yoli/dsh-notice-card#v0.2.0
+dsh plugin --profile web add github:Maple-Yoli/dsh-notice-card#v0.2.1
 ```
 
 DSH 会读到你包里的 `dsh.bundle.patch`，自动把它加进 profile 的 `dsh.profile.bundles`。

@@ -93,7 +93,7 @@ There are four ways. Pick the one that matches your DSH setup; do not use two at
 ### Option 1: from npm
 
 ```bash
-npm i dsh-notice-card@0.2.0
+npm i dsh-notice-card@0.2.1
 ```
 
 Then open `cordis.patch.yml` in your profile directory (by default `%USERPROFILE%\.dsh\profiles\<your profile name>\`) and add this at the end of the file:
@@ -114,7 +114,7 @@ Then open `cordis.patch.yml` in your profile directory (by default `%USERPROFILE
 Use this one if you want to change the code.
 
 ```bash
-git clone --branch v0.2.0 https://github.com/Maple-Yoli/dsh-notice-card.git
+git clone --branch v0.2.1 https://github.com/Maple-Yoli/dsh-notice-card.git
 ```
 
 Then add this at the end of your profile's `cordis.patch.yml`:
@@ -145,13 +145,13 @@ The plugin is mounted automatically afterwards; you do not edit the patch file.
 These profiles accept command-line plugin installs.
 
 ```bash
-dsh plugin --profile web add dsh-notice-card@0.2.0
+dsh plugin --profile web add dsh-notice-card@0.2.1
 ```
 
 You can also use the GitHub source instead of npm:
 
 ```bash
-dsh plugin --profile web add github:Maple-Yoli/dsh-notice-card#v0.2.0
+dsh plugin --profile web add github:Maple-Yoli/dsh-notice-card#v0.2.1
 ```
 
 DSH reads the `dsh.bundle.patch` field from the package and adds it to the profile's `dsh.profile.bundles`, so you do not edit that file.
