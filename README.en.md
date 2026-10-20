@@ -2,12 +2,14 @@
 
 # Notice Card
 
-Notification cards for DeepSeek Harness: when a turn ends, when DSH waits for an approval, or when it waits for an answer, a card appears in a corner of the screen.
+Notification cards for the DeepSeek Harness **desktop app**: when a turn ends, when DSH waits for an approval, or when it waits for an answer, a card appears in a corner of the screen.
+
+**Desktop only.** The card is a native Windows window and needs no browser. There is no web half: no browser notifications, no in-page overlay, no tab-title marker.
 
 [![npm version](https://img.shields.io/npm/v/dsh-notice-card?color=2ea043)](https://www.npmjs.com/package/dsh-notice-card)
 [![npm downloads](https://img.shields.io/npm/dm/dsh-notice-card?color=2ea043)](https://www.npmjs.com/package/dsh-notice-card)
 [![license](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
-[![platform](https://img.shields.io/badge/platform-Windows-blue)](#requirements)
+[![platform](https://img.shields.io/badge/platform-Windows%20desktop-blue)](#requirements)
 
 [简体中文](https://github.com/Maple-Yoli/dsh-notice-card/blob/main/README.md) · **English**
 
@@ -73,12 +75,17 @@ The card sits above other windows but never takes focus. You can keep typing, an
 
 ## Requirements
 
+> **Desktop only, no web build.** The card is a native window drawn on the Windows machine running DSH, not through a browser. The package has no web half, so browser notifications, in-page overlays and tab-title markers are all absent. For browser-side reminders, use a plugin that ships a client half, such as [dsh-notify-me](https://github.com/chromoany/dsh-notify-me).
+
 | Item | Requirement |
 | --- | --- |
+| Form | **The desktop app** (`DeepSeek Harness.exe`), or a DSH host running on the Windows machine you look at |
 | OS | Windows |
 | DSH | 0.1.0-rc.1 or newer |
 | Node | 20 or newer (only used when DSH loads the plugin) |
 | .NET Framework | 4.x, ships with Windows, nothing to install |
+
+If you only drive DSH from a browser, the card still draws on the machine that hosts DSH. With the host on a remote server, the card lands on that server's desktop and you never see it.
 
 <a id="install"></a>
 
@@ -132,19 +139,21 @@ Maple-Yoli/dsh-notice-card
 
 It mounts automatically afterwards; you do not edit the patch file.
 
-### Option 4: `dsh web` or a profile you created yourself
+### Option 4: a profile you created yourself
 
 ```bash
-dsh plugin --profile web add dsh-notice-card@0.2.1
+dsh plugin --profile <your profile> add dsh-notice-card@0.2.1
 ```
 
 You can also use the GitHub source instead of npm:
 
 ```bash
-dsh plugin --profile web add github:Maple-Yoli/dsh-notice-card#v0.2.1
+dsh plugin --profile <your profile> add github:Maple-Yoli/dsh-notice-card#v0.2.1
 ```
 
 The `dsh.bundle.patch` field in the package is added to the profile's `dsh.profile.bundles` for you.
+
+This option only helps when the host runs on this same machine. With the host on a remote server, it makes no difference which profile you install into: the card draws on the server's desktop.
 
 <a id="config"></a>
 
@@ -207,6 +216,10 @@ This needs a `card-*.exe` to already exist in the cache directory; if there is n
 <a id="faq"></a>
 
 ## FAQ
+
+**I use DSH from a browser. Will I get cards?**
+
+No. The card is drawn on the Windows machine that runs DSH, not through a browser. With `dsh web` open on another device, or the host on a remote server, the card lands on the host's desktop and you never see it. For browser-side reminders, use a plugin that ships a web half, such as [dsh-notify-me](https://github.com/chromoany/dsh-notify-me).
 
 **No card appears**
 

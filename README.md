@@ -2,12 +2,14 @@
 
 # Notice Card
 
-给 DeepSeek Harness 的通知卡：任务跑完、等你审批、等你回答时，在屏幕角落弹一张卡片。
+给 DeepSeek Harness **桌面端**的通知卡：任务跑完、等你审批、等你回答时，在屏幕角落弹一张卡片。
+
+**只做桌面端。** 卡片是 Windows 原生窗口，不依赖浏览器，也不提供网页端那一套（浏览器通知 / 页面浮层 / 标签页标题标记）。
 
 [![npm version](https://img.shields.io/npm/v/dsh-notice-card?color=2ea043)](https://www.npmjs.com/package/dsh-notice-card)
 [![npm downloads](https://img.shields.io/npm/dm/dsh-notice-card?color=2ea043)](https://www.npmjs.com/package/dsh-notice-card)
 [![license](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
-[![platform](https://img.shields.io/badge/platform-Windows-blue)](#requirements)
+[![platform](https://img.shields.io/badge/platform-Windows%20desktop-blue)](#requirements)
 
 **简体中文** · [English](https://github.com/Maple-Yoli/dsh-notice-card/blob/main/README.en.md)
 
@@ -73,12 +75,17 @@
 
 ## 环境要求
 
+> **只做桌面端，不做网页端。** 卡片是画在运行 DSH 的那台 Windows 机器桌面上的原生窗口，不经过浏览器。包里没有网页那一半，所以浏览器通知、页面浮层、标签页标题标记这些一个都没有。想在浏览器里收提醒，用 [dsh-notify-me](https://github.com/chromoany/dsh-notify-me) 那种带 client 半的网页插件。
+
 | 项目 | 要求 |
 | --- | --- |
+| 形态 | **桌面端**（`DeepSeek Harness.exe`），或 DSH 宿主就跑在你要看的那台 Windows 上 |
 | 系统 | Windows |
 | DSH | 0.1.0-rc.1 或更高 |
 | Node | 20 或更高（只在 DSH 加载插件时用得到） |
 | .NET Framework | 4.x，Windows 自带，不用另外装 |
+
+浏览器只用来操作 DSH 的话，卡片会画在 DSH 宿主那台机器上。宿主在远程服务器上，卡片就落在服务器的桌面，你在这边看不见。
 
 <a id="install"></a>
 
@@ -132,19 +139,21 @@ Maple-Yoli/dsh-notice-card
 
 装完自动挂上，不用改 patch 文件。
 
-### 方式四：`dsh web` 或自己建的 profile
+### 方式四：自己建的 profile
 
 ```bash
-dsh plugin --profile web add dsh-notice-card@0.2.1
+dsh plugin --profile <你的 profile> add dsh-notice-card@0.2.1
 ```
 
 也可以直接走 GitHub 源，不经 npm：
 
 ```bash
-dsh plugin --profile web add github:Maple-Yoli/dsh-notice-card#v0.2.1
+dsh plugin --profile <你的 profile> add github:Maple-Yoli/dsh-notice-card#v0.2.1
 ```
 
 包里的 `dsh.bundle.patch` 会被自动加进 profile 的 `dsh.profile.bundles`。
+
+这种方式只适合宿主也跑在本机的场合。宿主跑在远程服务器上，装到哪个 profile 都一样：卡片画在服务器的桌面上。
 
 <a id="config"></a>
 
@@ -207,6 +216,10 @@ $card = (Get-ChildItem "$env:LOCALAPPDATA\dsh-notice-card\card-*.exe" | Select-O
 <a id="faq"></a>
 
 ## 常见问题
+
+**在浏览器里用 DSH，能收到卡片吗**
+
+收不到。卡片画在跑 DSH 的那台 Windows 机器上，不经过浏览器。`dsh web` 开在另一台设备上，或者宿主在远程服务器上，卡片都落在宿主那台机器的桌面，你看不见。想在浏览器里收提醒，换 [dsh-notify-me](https://github.com/chromoany/dsh-notify-me) 这类带网页端一半的插件。
 
 **卡片不弹**
 
