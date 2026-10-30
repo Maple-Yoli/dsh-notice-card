@@ -1,12 +1,15 @@
 {
   "name": "dsh-notice-card",
-  "version": "0.2.1",
-  "description": "Windows 桌面端专用，没有网页端那一半。在屏幕角落弹出通知卡：任务跑完、等你审批、等你回答的时候提醒你一下。跟随系统深浅色与 DPI，落在鼠标那块屏幕，文字用 GDI ClearType 绘制，不抢焦点。Windows desktop only, no web build: a notice card that appears in a corner of the monitor under your pointer when a turn ends, or when DSH is waiting for an approval or an answer. Follows the system theme and DPI, draws text with GDI ClearType, and never takes focus.",
+  "version": "0.3.0",
+  "description": "Windows 桌面端专用，没有网页端那一半。在屏幕角落弹出通知卡：任务跑完、等你审批、等你回答的时候提醒你一下。跟随系统深浅色与 DPI，落在鼠标那块屏幕，只有黑底白字和白底黑字两套配色，文字按亮度抗锯齿绘制，不抢焦点。Windows desktop only, no web build: a notice card that appears in a corner of the monitor under your pointer when a turn ends, or when DSH is waiting for an approval or an answer. Follows the system theme and DPI, ships two monochrome palettes (white on black, black on white), draws text with brightness-only anti-aliasing, and never takes focus.",
   "type": "module",
   "main": "lib/index.mjs",
   "exports": {
     ".": {
       "default": "./lib/index.mjs"
+    },
+    "./client": {
+      "default": "./lib/client.js"
     },
     "./cordis.patch.yml": "./cordis.patch.yml",
     "./package.json": "./package.json"
@@ -22,6 +25,9 @@
     "bundle": {
       "patch": "./cordis.patch.yml"
     },
+    "client": {
+      "platform": "web"
+    },
     "compatibility": {
       "dsh": ">=0.1.0-rc.1"
     }
@@ -35,7 +41,8 @@
       "桌面"
     ],
     "surfaces": [
-      "host"
+      "host",
+      "web"
     ],
     "capabilities": {
       "provides": []
@@ -47,6 +54,9 @@
     "permissions": {
       "network": []
     }
+  },
+  "dependencies": {
+    "@deepseek-ai/schemastery": "^3.18.4"
   },
   "peerDependencies": {
     "@deepseek-ai/cordis": "^4.0.2"
@@ -80,6 +90,7 @@
   ],
   "license": "MIT",
   "engines": {
+    "dsh": ">=0.1.0-rc.1",
     "node": ">=20"
   },
   "os": [

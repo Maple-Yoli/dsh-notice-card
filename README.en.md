@@ -35,10 +35,16 @@ The card sits above other windows but never takes focus. You can keep typing, an
 
 ### Appearance
 
-- **Follows the system theme** — dark surface with light text on dark, the other way round on light. The theme is read once per card, so a card raised after you switch already has the new colours.
+- **Follows the system theme** — dark surface with light text on dark, the other way round on light. The theme is read once per card, so a card raised after you switch already has the new colours. Both sets are fixed constants — dark `#2B2B2B` surface / `#FFFFFF` primary / `#CFCFCF` secondary, light `#FFFFFF` / `#1A1A1A` / `#5F5F5F` — measured off the Windows Settings app. uxtheme is no longer consulted: it only ever answers pure black or pure white, and cannot give the raised surface Settings actually uses.
 - **High contrast takes over** — with high contrast on, the card borrows the system's own window and text colours instead of guessing at a variant.
-- **Text drawn by the system engine** — GDI ClearType, the same renderer as the taskbar, Explorer and Settings, with glyphs sitting on the pixel grid. Sizes are whole pixels, and line height and wrap width come from the same engine that paints, so a line never measures as fitting and then gets clipped.
-- **Typeface follows the interface language** — Microsoft YaHei UI for Chinese, Yu Gothic UI for Japanese, Malgun Gothic for Korean, Segoe UI otherwise. In a right-to-left language (Arabic, Hebrew) the two corner buttons mirror to the top-left.
+- **Text is drawn with greyscale antialiasing into a black buffer, then flattened** — white on black into a scratch buffer at twice the card's pixel size, then every pixel's coverage is read back and interpolated between the surface colour and the ink colour. ClearType is not used: it parks a stem's coverage on one subpixel column, so the same stroke reads five times brighter or darker depending on which column it landed on, and after flattening to grey that is exactly what "neighbouring stems disagree" looks like at small sizes. Greyscale is a true per-pixel area, so the stem-to-stem spread falls to 0.05–0.08 (from 0.11–0.13). The extra samples give glyph outlines a real ramp instead of a one-pixel step: hard jumps fall to 0.25–0.28 of all edges (from 0.44–0.48). Sizes are whole pixels, and line height and wrap width come from the same engine that paints, so a line never measures as fitting and then gets clipped.
+- **Typeface follows the interface language** — Noto Sans SC (falling back to Microsoft YaHei UI) for Chinese, Noto Sans JP / Yu Gothic UI for Japanese, Noto Sans KR / Malgun Gothic for Korean, Segoe UI otherwise. The headline takes one heavier master of the same family (SemiBold, or Medium where the family ships no SemiBold) and the body keeps the regular master — a weight the font actually draws rather than a thickened outline. One notch only: a Black headline at this size reads as smeared, and a Medium body widens every stem until the paragraph looks emboldened. In a right-to-left language (Arabic, Hebrew) the two corner buttons mirror to the top-left.
+- **The body box is counted in lines, six of them** — the card does not grow or shrink with the length of the text: six lines is a constant, and a short notice simply leaves space below. That keeps a stack even-edged and makes every card compute the same "how many fit here". Leading is 1.4em (the font's own line box asks 1.45, which reads airy for a paragraph), snapped to whole pixels so the tenth line lands where the first predicted.
+- **The edge is directional, not uniform** — the rounded `Region` clips the window, so a drop shadow cannot be drawn inside it; the lift instead comes from a 1px vertical gradient rim that starts near the surface colour at the top and sinks close to black at the bottom, all the way round. That reads more like a sheet of paper than a hairline of equal weight on all four sides, and it never produces the pale rim that instantly gives a dark card away as somebody else's window. The rim is made by filling the outer rounded rect with the gradient and punching the surface back out, not by stroking with a gradient pen: GDI+ only honours a gradient brush along part of a stroked path, which leaves three edges bare.
+- **Each rung of the stack sinks** — the second and third card sit a notch darker than the front one (about 4% per rung in light, 8.5% in dark), and the fourth and beyond stop darkening so the far end of a stack does not collapse into a hairline. A stack therefore reads front-to-back instead of reading as one card drawn with three edges.
+- **The scrollbar fades** — when the body runs past six lines a 2px track and 4px thumb appear on the right; 400ms after scrolling stops they begin to fade and are gone within 260ms. Scrolling or dragging brings them back. No grey stripe outlives the reason it appeared.
+- **The corner buttons rest on a wash** — the window icon and the ✕ carry a very faint rounded fill at rest (alpha 0x06 in light, 0x0A in dark) and deepen to the old hover colour under the pointer. Faint enough not to compete with the headline, strong enough to read as a hit area.
+- **The buttons share the moment's row** — the two corner buttons sit on the timestamp line and start flush with it, instead of taking the right end of the headline. Both the clock row and the headline row therefore come free at the right. In the bottom corners that row is the card's top one, in the top corners its bottom one, so the pair follows the timestamp in either layout.
 
 ### Position and size
 
@@ -48,11 +54,13 @@ The card sits above other windows but never takes focus. You can keep typing, an
 - **Grows with the text size** — bump **Settings → Accessibility → Text size** and the whole card grows instead of squeezing the text into the old box.
 - **Stacks into a deck** — the oldest card sits in front and fully visible, the rest show only their title. As many as fit, and never one off the edge of the screen.
 
-### Footer
+### Clock and session
 
-- **Left** — the moment the card was raised, in your own short-time pattern (`2:35 PM` on a 12-hour region, `14:35` on a 24-hour one).
-- **Right** — the session name. A session with no generated title yet shows the first six characters of its id, which still tells two sessions apart. Right-to-left languages swap this end.
-- **Row below** — the session's current permission mode, the same name the app's permission dropdown shows, display only.
+In a deck each card shows only the narrow band against the screen edge, so the moment, the session name and the card's headline all live in that band: with the card in one of the two bottom corners the band is the card's top two rows (the moment first, `14:37 · session name`, with the session id's first six characters when there is no generated title yet, then the headline); in the top corners the band is at the bottom, so the same two rows are the last ones. The band is measured from those two rows, so it keeps holding all three however large the type or however wide the card. Right-to-left languages mirror the whole strip.
+
+- **The moment** — in your own short-time pattern (`2:35 PM` on a 12-hour region, `14:35` on a 24-hour one).
+- **The session name** — on the same row as the moment, running from behind it to the two buttons at that row's right end, truncated with `...` when long.
+- **The permission mode** — the same name the app's permission dropdown shows, display only, written on the row furthest from the band so it shows when the card is fully expanded.
 
 ### Behaviour
 
@@ -61,7 +69,7 @@ The card sits above other windows but never takes focus. You can keep typing, an
 - **Quiet hours suppress the interruption** — while Windows is in a do-not-disturb state (focus assist, presentation mode) a turn-end card is not drawn. Approval and question cards still appear: that is the conversation waiting on you.
 - **Over fullscreen it does not block the mouse** — the card turns click-through, so clicks land on the window underneath instead of forming a dead patch in the corner. Leave fullscreen and it becomes clickable again, ✕ included.
 - **Animations off means no motion** — with **Show animations in Windows** off, or the machine in battery saver, the card lands in place instead of sliding and fading. Decided per card, so changing the setting affects the next one.
-- **Bigger buttons on a touch screen** — 28px for a mouse, 36px for a finger, with the hover highlight dropped. Wheel scrolling follows your mouse settings rather than a hard-coded three lines.
+- **The buttons are as tall as their row** — the button height is the timestamp band's height (16 units minimum), so the glyphs sit level with the clock at every type size instead of standing taller than the row they belong to. A touch screen gets no hover highlight, and wheel scrolling follows your mouse settings rather than a hard-coded three lines.
 - **Always on top** — when another always-on-top window competes, Windows may put the card behind.
 
 ### When a card goes away
@@ -96,7 +104,7 @@ Four ways. Pick the one that matches your DSH setup, and **do not use two at onc
 ### Option 1: from npm
 
 ```bash
-npm i dsh-notice-card@0.2.1
+npm i dsh-notice-card@0.3.0
 ```
 
 Then add this at the end of `cordis.patch.yml` in your profile directory (by default `%USERPROFILE%\.dsh\profiles\<profile name>\`):
@@ -115,7 +123,7 @@ Then add this at the end of `cordis.patch.yml` in your profile directory (by def
 Use this one if you want to change the code.
 
 ```bash
-git clone --branch v0.2.1 https://github.com/Maple-Yoli/dsh-notice-card.git
+git clone --branch v0.3.0 https://github.com/Maple-Yoli/dsh-notice-card.git
 ```
 
 ```yaml
@@ -142,13 +150,13 @@ It mounts automatically afterwards; you do not edit the patch file.
 ### Option 4: a profile you created yourself
 
 ```bash
-dsh plugin --profile <your profile> add dsh-notice-card@0.2.1
+dsh plugin --profile <your profile> add dsh-notice-card@0.3.0
 ```
 
 You can also use the GitHub source instead of npm:
 
 ```bash
-dsh plugin --profile <your profile> add github:Maple-Yoli/dsh-notice-card#v0.2.1
+dsh plugin --profile <your profile> add github:Maple-Yoli/dsh-notice-card#v0.3.0
 ```
 
 The `dsh.bundle.patch` field in the package is added to the profile's `dsh.profile.bundles` for you.
@@ -186,10 +194,11 @@ Configuration goes in the patch's `config:` block. For example, to turn off the 
 | `appPath` | inferred | Which exe to launch when that process is not running |
 | `corner` | `auto` | `auto` follows the taskbar, or pin `top-left` / `top-right` / `bottom-left` / `bottom-right` |
 | `maxStack` | `3` | How many cards may be up at once (1–8); the oldest closes past that. The screen height still decides what fits |
+| `fontSize` | `100` | Type size in percent (80–160). Only the glyphs grow: the card's width, height, line spacing and band positions stay put |
 
 `processName` and `appPath` are inferred from the DSH process; on the desktop app they are `DeepSeek Harness` and its exe path. Leave both empty and clicking the window icon only closes the card.
 
-Changing `corner` or `maxStack` edits the config of an already-loaded plugin, so it takes a **full DSH restart**, not a reload.
+Changing `corner`, `maxStack` or `fontSize` edits the config of an already-loaded plugin, so it takes a **full DSH restart**, not a reload.
 
 <a id="how"></a>
 
